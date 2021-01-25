@@ -209,6 +209,70 @@ class Fleet {
   }
 }
 
+class ComputerFleet extends Fleet {
+
+  setShipCoordinates(map, shipLength) {
+
+
+    this.setRandomBowCoordinate(map);
+
+    console.log(`bow: ${this.bow}`);
+    this.setAftCoordinate(map, shipLength);
+    
+
+
+
+  }
+
+  setAftCoordinate(map, shipLength) {
+    let possableOptions = this.findPossibleOptions(map, shipLength);
+    console.log(possableOptions);
+  }
+
+  findPossibleOptions(map, shipLength) {
+    let options = [];
+    options.push(this.countSpacesRight(map, shipLength));
+    options.push(this.countSpacesLeft(map, shipLength));
+    options.push(this.countSpacesUp(map, ))
+    return options;
+
+  }
+
+  countSpacesRight(map, shipLength) { 
+    let start = this.bow.charCodeAt(0);
+    let end = start + this[shipLength] - 1;
+    end = String.fromCharCode(end);
+
+    if (end <= "J") {
+      if (this.bow.length === 3) {
+        return end + "10";
+      } else {
+        return end + String(this.bow[1]);
+      }
+    } else {
+      return null;
+    }
+  }
+
+
+  setRandomBowCoordinate(map) {
+    let min = 0;
+    let max = Object.keys(map.grid).length;
+
+    this.bow = Object.keys(map.grid)[this.getRandomNumber(min, max)];
+
+    while (!this.isEmptySquare(this.bow, map) || !this.isValidInput(this.bow, map)) {
+      this.bow = Object.keys(map.grid)[this.getRandomNumber(min, max)];
+    }
+  }
+
+
+  getRandomNumber(min, max) {
+    return Math.floor(Math.random() * (max - min) + min);
+  }
+
+}
+
 class Map {
   static columnLetters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
   static emptySquare = "   ";
@@ -275,16 +339,9 @@ class Map {
 }
 Object.assign(Map.prototype, Fleet);
 
-class PlayersMap extends Map {  
-}
-
-class EnemyMap extends Map {
-}
-
 class Player {
   constructor() {
-    this.playersMap = new PlayersMap();
-    this.enemyMap = new EnemyMap();
+    this.playersMap = new Map();
     this.fleet = new Fleet();
   }
 
@@ -306,12 +363,21 @@ class Player {
   }
 }
 
-class Computer extends Player {
+class Computer {
+  constructor() {
+    this.computerMap = new Map();
+    this.computerFleet = new ComputerFleet();
+  }
 
   initializeShipPlacement() {
-    console.log("Setting enemy fleet");
-    this.enemyMap.display();
-    console.log(this.enemyMap.grid);
+    console.log("Setting enemy fleet!\n");
+
+    Fleet.shipNames.forEach(ship => {
+      this.computerFleet.setShipCoordinates(this.computerMap, ship);
+      this.computerMap.display();
+
+    });
+
   }
 }
 
@@ -325,7 +391,7 @@ class BattleShipGame {
     // INTRO_ASCII.display();
 
     // this.player.setFleetPosition();
-    // this.computer.initializeShipPlacement();
+    this.computer.initializeShipPlacement();
 
     // this.player.enemyMap.display();
     // this.player.playersMap.display();
