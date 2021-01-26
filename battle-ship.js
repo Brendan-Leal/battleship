@@ -20,7 +20,6 @@ const INTRO_ASCII = {
   }
 };
 
-
 class Fleet {
   static bowHorizontal = " > ";
   static aftHorizontal = " < ";
@@ -176,9 +175,6 @@ class Fleet {
 
         if (map.grid[gridPosition] !== Map.emptySquare) {
           console.log("\nAdmiral! We don't want our fleet to collide. Use better judgment or be removed from command.");
-          map.display();
-          // console.log(this);
-          // throw new Error("Intersecting Ships");
           return true;
         }
       }
@@ -213,28 +209,38 @@ class Fleet {
 }
 
 class ComputerFleet extends Fleet {
-
-
   setShipCoordinates(map, shipLength) {
-
     do {
       this.setRandomBowCoordinate(map);
-
-      while (!this.isEmptySquare(this.bow, map) || !this.isValidInput(this.bow, map)) {
-        this.setRandomBowCoordinate(map);
-      }
 
       this.setAftCoordinate(map, shipLength);
 
       while (!this.isEmptySquare(this.bow, map) || !this.isValidInput(this.bow, map)) {
         this.setAftCoordinate(map, shipLength);
       }
+
       this.orientShip();
     } while (this.isIntersectingShips(map) || this.desiredLengthNotMet(shipLength) || this.isDiagonal());
+
+  }
+
+  setRandomBowCoordinate(map) {
+    let min = 0;
+    let max = Object.keys(map.grid).length;
+
+    this.bow = Object.keys(map.grid)[this.getRandomNumber(min, max)];
+
+    while (!this.isEmptySquare(this.bow, map) || !this.isValidInput(this.bow, map)) {
+      this.bow = Object.keys(map.grid)[this.getRandomNumber(min, max)];
+    }
   }
 
   setAftCoordinate(map, shipLength) {
     let possableOptions = this.findPossibleOptions(map, shipLength);
+    possableOptions = possableOptions.filter(coordinate => {
+      return this.isEmptySquare(coordinate, map);
+    });
+
     let minRandValue = 0;
     let maxRandValue = possableOptions.length;
 
@@ -256,7 +262,6 @@ class ComputerFleet extends Fleet {
     options = options.filter(coordinate => coordinate !== null);
 
     return options;
-
   }
 
   countVerticalSpaces(direction, shipLength) {
@@ -264,6 +269,7 @@ class ComputerFleet extends Fleet {
     if (this.bow.length === 3) {
       start = 10;
     }
+
     let end = null;
 
     if (direction === "D") {
@@ -282,7 +288,6 @@ class ComputerFleet extends Fleet {
 
       return this.bow[0] + String(end);
     }
-
   }
 
   countHorizontalSpaces(direction, shipLength) {
@@ -320,23 +325,9 @@ class ComputerFleet extends Fleet {
     }
   }
 
-
-  setRandomBowCoordinate(map) {
-    let min = 0;
-    let max = Object.keys(map.grid).length;
-
-    this.bow = Object.keys(map.grid)[this.getRandomNumber(min, max)];
-
-    while (!this.isEmptySquare(this.bow, map) || !this.isValidInput(this.bow, map)) {
-      this.bow = Object.keys(map.grid)[this.getRandomNumber(min, max)];
-    }
-  }
-
-
   getRandomNumber(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
   }
-
 }
 
 class Map {
@@ -359,10 +350,10 @@ class Map {
   }
 
   display() {
-    this.displayHeading(this.constructor.name);
     console.log(this.line);
     console.log(this.line0);
     console.log(this.horizontalLine);
+    
     console.log(`| 1 |${this.grid.A1}|${this.grid.B1}|${this.grid.C1}|${this.grid.D1}|${this.grid.E1}|${this.grid.F1}|${this.grid.G1}|${this.grid.H1}|${this.grid.I1}|${this.grid.J1}|`);
 
     console.log(this.horizontalLine);
@@ -393,14 +384,6 @@ class Map {
     console.log(`|10 |${this.grid.A10}|${this.grid.B10}|${this.grid.C10}|${this.grid.D10}|${this.grid.E10}|${this.grid.F10}|${this.grid.G10}|${this.grid.H10}|${this.grid.I10}|${this.grid.J10}|`);
 
     console.log(this.line);
-  }
-
-  displayHeading(name) {
-    if (name === "PlayersMap") {
-      console.log("\n\nYour Fleet Map");
-    } else {
-      console.log("Enemy Fleet Map");
-    }
   }
 }
 Object.assign(Map.prototype, Fleet);
@@ -435,17 +418,15 @@ class Computer {
     this.computerFleet = new ComputerFleet();
   }
 
-  initializeShipPlacement() {
-    console.log("Setting enemy fleet!\n");
-
+  initializeShipPlacement() { // 1
     Fleet.shipNames.forEach(ship => {
-      this.computerFleet.setShipCoordinates(this.computerMap, ship);
+      this.computerFleet.setShipCoordinates(this.computerMap, ship); // call 2
       this.computerFleet.placeShipIn(this.computerMap);
 
+      this.computerMap.display();
+      console.clear();
     });
     console.clear();
-    this.computerMap.display();
-
   }
 }
 
@@ -458,11 +439,14 @@ class BattleShipGame {
   play() {
     // INTRO_ASCII.display();
 
-    // this.player.setFleetPosition();
+    this.player.setFleetPosition();
     this.computer.initializeShipPlacement();
 
-    // this.player.enemyMap.display();
-    // this.player.playersMap.display();
+    console.log("Enemy Fleet Map");
+    this.computer.computerMap.display();
+
+    console.log("\n\nYour Fleet Map");
+    this.player.playersMap.display();
   }
 }
 
