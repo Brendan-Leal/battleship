@@ -237,6 +237,7 @@ class ComputerFleet extends Fleet {
 
   setAftCoordinate(map, shipLength) {
     let possableOptions = this.findPossibleOptions(map, shipLength);
+
     possableOptions = possableOptions.filter(coordinate => {
       return this.isEmptySquare(coordinate, map);
     });
@@ -398,21 +399,18 @@ class Map {
 
   displayShips() {
     if (this.playerType === "player") {
-      console.log(`Ships in your fleet: (${this.shipNames.join(", ")})\n`);
+      console.log(`Ships in your fleet: (${Fleet.shipNames.join(", ")})\n`);
     } else {
-      console.log(`Ships in the enemy fleet: (${this.shipNames.join(", ")})\n`);
+      console.log(`Ships in the enemy fleet: (${Fleet.shipNames.join(", ")})\n`);
     }
   }
 }
-Object.assign(Map.prototype, Fleet);
 
 const Combat = {
   fireUpon(combatant) {
     let coordinate = readline.question("Admiral! Choose a coordinate to fire upon: ").toUpperCase(); // Needs validation
     console.log(combatant.computerMap.grid[coordinate]);
   },
-
-
 };
 
 class Player {
@@ -451,7 +449,6 @@ class Computer {
       this.computerFleet.setShipCoordinates(this.computerMap, ship);
       this.computerFleet.placeShipIn(this.computerMap);
 
-      this.computerMap.display();
       console.clear();
     });
     console.clear();
@@ -480,7 +477,7 @@ class BattleShipGame {
     console.log("\n\nYour Fleet Map");
     this.player.playersMap.display(isMapConcealed);
 
-    this.player.fireUpon(this.computer);
+    // this.player.fireUpon(this.computer);
     
 
   }
