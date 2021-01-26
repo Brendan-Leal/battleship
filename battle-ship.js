@@ -27,14 +27,14 @@ class Fleet {
   static bowVertical = " ^ ";
   static aftVertical = " v ";
   static shipBodyVertical = " # ";
-  static shipNames = ["carrier", "battleShip", "cruiser", "submarine", "destroyer"];
+  static shipNames = ["carrier", "battleship"]; //["carrier", "battleship", "cruiser", "submarine", "destroyer"];
 
   constructor() {
     this.carrier = 6;
-    this.battleShip = 5;
-    this.cruiser = 4;
-    this.submarine = 3;
-    this.destroyer = 3;
+    this.battleship = 5;
+    // this.cruiser = 4;
+    // this.submarine = 3;
+    // this.destroyer = 3;
     this.bow = null;
     this.aft = null;
   }
@@ -334,13 +334,16 @@ class Map {
   static columnLetters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
   static emptySquare = "   ";
 
-  constructor() {
+  constructor(playerType) {
+    this.playerType = playerType;
     this.grid = {};
+    this.emptyGrid = {};
 
     for (let row = 1; row <= 10; row++) {
       for (let column = 0; column < Map.columnLetters.length; column++) {
         let coordinate = Map.columnLetters[column] + String(row);
         this.grid[coordinate] = Map.emptySquare;
+        this.emptyGrid[coordinate] = Map.emptySquare;
       }
     }
 
@@ -349,58 +352,82 @@ class Map {
     this.line = "-".repeat(this.horizontalLine.length);
   }
 
-  display() {
+  display(isMapConcealed = true) {
+    let coordinate = this.emptyGrid;
+    if (isMapConcealed === false) {
+      coordinate = this.grid;
+    }
+
     console.log(this.line);
     console.log(this.line0);
     console.log(this.horizontalLine);
-    
-    console.log(`| 1 |${this.grid.A1}|${this.grid.B1}|${this.grid.C1}|${this.grid.D1}|${this.grid.E1}|${this.grid.F1}|${this.grid.G1}|${this.grid.H1}|${this.grid.I1}|${this.grid.J1}|`);
+
+    console.log(`| 1 |${coordinate.A1}|${coordinate.B1}|${coordinate.C1}|${coordinate.D1}|${coordinate.E1}|${coordinate.F1}|${coordinate.G1}|${coordinate.H1}|${coordinate.I1}|${coordinate.J1}|`);
 
     console.log(this.horizontalLine);
-    console.log(`| 2 |${this.grid.A2}|${this.grid.B2}|${this.grid.C2}|${this.grid.D2}|${this.grid.E2}|${this.grid.F2}|${this.grid.G2}|${this.grid.H2}|${this.grid.I2}|${this.grid.J2}|`);
+    console.log(`| 2 |${coordinate.A2}|${coordinate.B2}|${coordinate.C2}|${coordinate.D2}|${coordinate.E2}|${coordinate.F2}|${coordinate.G2}|${coordinate.H2}|${coordinate.I2}|${coordinate.J2}|`);
 
     console.log(this.horizontalLine);
-    console.log(`| 3 |${this.grid.A3}|${this.grid.B3}|${this.grid.C3}|${this.grid.D3}|${this.grid.E3}|${this.grid.F3}|${this.grid.G3}|${this.grid.H3}|${this.grid.I3}|${this.grid.J3}|`);
+    console.log(`| 3 |${coordinate.A3}|${coordinate.B3}|${coordinate.C3}|${coordinate.D3}|${coordinate.E3}|${coordinate.F3}|${coordinate.G3}|${coordinate.H3}|${coordinate.I3}|${coordinate.J3}|`);
 
     console.log(this.horizontalLine);
-    console.log(`| 4 |${this.grid.A4}|${this.grid.B4}|${this.grid.C4}|${this.grid.D4}|${this.grid.E4}|${this.grid.F4}|${this.grid.G4}|${this.grid.H4}|${this.grid.I4}|${this.grid.J4}|`);
+    console.log(`| 4 |${coordinate.A4}|${coordinate.B4}|${coordinate.C4}|${coordinate.D4}|${coordinate.E4}|${coordinate.F4}|${coordinate.G4}|${coordinate.H4}|${coordinate.I4}|${coordinate.J4}|`);
 
     console.log(this.horizontalLine);
-    console.log(`| 5 |${this.grid.A5}|${this.grid.B5}|${this.grid.C5}|${this.grid.D5}|${this.grid.E5}|${this.grid.F5}|${this.grid.G5}|${this.grid.H5}|${this.grid.I5}|${this.grid.J5}|`);
+    console.log(`| 5 |${coordinate.A5}|${coordinate.B5}|${coordinate.C5}|${coordinate.D5}|${coordinate.E5}|${coordinate.F5}|${coordinate.G5}|${coordinate.H5}|${coordinate.I5}|${coordinate.J5}|`);
 
     console.log(this.horizontalLine);
-    console.log(`| 6 |${this.grid.A6}|${this.grid.B6}|${this.grid.C6}|${this.grid.D6}|${this.grid.E6}|${this.grid.F6}|${this.grid.G6}|${this.grid.H6}|${this.grid.I6}|${this.grid.J6}|`);
+    console.log(`| 6 |${coordinate.A6}|${coordinate.B6}|${coordinate.C6}|${coordinate.D6}|${coordinate.E6}|${coordinate.F6}|${coordinate.G6}|${coordinate.H6}|${coordinate.I6}|${coordinate.J6}|`);
 
     console.log(this.horizontalLine);
-    console.log(`| 7 |${this.grid.A7}|${this.grid.B7}|${this.grid.C7}|${this.grid.D7}|${this.grid.E7}|${this.grid.F7}|${this.grid.G7}|${this.grid.H7}|${this.grid.I7}|${this.grid.J7}|`);
+    console.log(`| 7 |${coordinate.A7}|${coordinate.B7}|${coordinate.C7}|${coordinate.D7}|${coordinate.E7}|${coordinate.F7}|${coordinate.G7}|${coordinate.H7}|${coordinate.I7}|${coordinate.J7}|`);
 
     console.log(this.horizontalLine);
-    console.log(`| 8 |${this.grid.A8}|${this.grid.B8}|${this.grid.C8}|${this.grid.D8}|${this.grid.E8}|${this.grid.F8}|${this.grid.G8}|${this.grid.H8}|${this.grid.I8}|${this.grid.J8}|`);
+    console.log(`| 8 |${coordinate.A8}|${coordinate.B8}|${coordinate.C8}|${coordinate.D8}|${coordinate.E8}|${coordinate.F8}|${coordinate.G8}|${coordinate.H8}|${coordinate.I8}|${coordinate.J8}|`);
 
     console.log(this.horizontalLine);
-    console.log(`| 9 |${this.grid.A9}|${this.grid.B9}|${this.grid.C9}|${this.grid.D9}|${this.grid.E9}|${this.grid.F9}|${this.grid.G9}|${this.grid.H9}|${this.grid.I9}|${this.grid.J9}|`);
+    console.log(`| 9 |${coordinate.A9}|${coordinate.B9}|${coordinate.C9}|${coordinate.D9}|${coordinate.E9}|${coordinate.F9}|${coordinate.G9}|${coordinate.H9}|${coordinate.I9}|${coordinate.J9}|`);
 
     console.log(this.horizontalLine);
-    console.log(`|10 |${this.grid.A10}|${this.grid.B10}|${this.grid.C10}|${this.grid.D10}|${this.grid.E10}|${this.grid.F10}|${this.grid.G10}|${this.grid.H10}|${this.grid.I10}|${this.grid.J10}|`);
+    console.log(`|10 |${coordinate.A10}|${coordinate.B10}|${coordinate.C10}|${coordinate.D10}|${coordinate.E10}|${coordinate.F10}|${coordinate.G10}|${coordinate.H10}|${coordinate.I10}|${coordinate.J10}|`);
 
     console.log(this.line);
+
+    this.displayShips();    
+  }
+
+  displayShips() {
+    if (this.playerType === "player") {
+      console.log(`Ships in your fleet: (${this.shipNames.join(", ")})\n`);
+    } else {
+      console.log(`Ships in the enemy fleet: (${this.shipNames.join(", ")})\n`);
+    }
   }
 }
 Object.assign(Map.prototype, Fleet);
 
+const Combat = {
+  fireUpon(combatant) {
+    let coordinate = readline.question("Admiral! Choose a coordinate to fire upon: ").toUpperCase(); // Needs validation
+    console.log(combatant.computerMap.grid[coordinate]);
+  },
+
+
+};
+
 class Player {
   constructor() {
-    this.playersMap = new Map();
+    this.playersMap = new Map("player");
     this.fleet = new Fleet();
   }
 
-  setFleetPosition() {
+  setFleetPosition(isMapConcealed) {
     Fleet.shipNames.forEach(ship => {
       console.clear();
       console.log("Welcome to the war room Admiral.");
       console.log(`- This is your fleet map. You have 5 ships of varying sizes to distribute throughout the map.\n- Coordinates are entered letter first followed by the number. Ex: A5\n- Ships can either be placed horizontally or vertically. No diagonal placements.`);
 
-      this.playersMap.display();
+      this.playersMap.display(isMapConcealed);
 
       console.log(`The ${ship} occupies ${this.fleet[ship]} spaces`);
 
@@ -411,16 +438,17 @@ class Player {
     });
   }
 }
+Object.assign(Player.prototype, Combat);
 
 class Computer {
   constructor() {
-    this.computerMap = new Map();
+    this.computerMap = new Map("computer");
     this.computerFleet = new ComputerFleet();
   }
 
-  initializeShipPlacement() { // 1
+  initializeShipPlacement() {
     Fleet.shipNames.forEach(ship => {
-      this.computerFleet.setShipCoordinates(this.computerMap, ship); // call 2
+      this.computerFleet.setShipCoordinates(this.computerMap, ship);
       this.computerFleet.placeShipIn(this.computerMap);
 
       this.computerMap.display();
@@ -429,6 +457,7 @@ class Computer {
     console.clear();
   }
 }
+Object.assign(Computer.prototype, Combat);
 
 class BattleShipGame {
   constructor() {
@@ -438,15 +467,22 @@ class BattleShipGame {
 
   play() {
     // INTRO_ASCII.display();
+    let isMapConcealed = false;
 
-    this.player.setFleetPosition();
+    this.player.setFleetPosition(isMapConcealed);
+
     this.computer.initializeShipPlacement();
 
     console.log("Enemy Fleet Map");
     this.computer.computerMap.display();
+    this.computer.computerMap.display(isMapConcealed);
 
     console.log("\n\nYour Fleet Map");
-    this.player.playersMap.display();
+    this.player.playersMap.display(isMapConcealed);
+
+    this.player.fireUpon(this.computer);
+    
+
   }
 }
 
