@@ -176,6 +176,9 @@ class Fleet {
 
         if (map.grid[gridPosition] !== Map.emptySquare) {
           console.log("\nAdmiral! We don't want our fleet to collide. Use better judgment or be removed from command.");
+          map.display();
+          // console.log(this);
+          // throw new Error("Intersecting Ships");
           return true;
         }
       }
@@ -211,46 +214,109 @@ class Fleet {
 
 class ComputerFleet extends Fleet {
 
+
   setShipCoordinates(map, shipLength) {
 
+    do {
+      this.setRandomBowCoordinate(map);
 
-    this.setRandomBowCoordinate(map);
+      while (!this.isEmptySquare(this.bow, map) || !this.isValidInput(this.bow, map)) {
+        this.setRandomBowCoordinate(map);
+      }
 
-    console.log(`bow: ${this.bow}`);
-    this.setAftCoordinate(map, shipLength);
-    
+      this.setAftCoordinate(map, shipLength);
 
-
-
+      while (!this.isEmptySquare(this.bow, map) || !this.isValidInput(this.bow, map)) {
+        this.setAftCoordinate(map, shipLength);
+      }
+      this.orientShip();
+    } while (this.isIntersectingShips(map) || this.desiredLengthNotMet(shipLength) || this.isDiagonal());
   }
 
   setAftCoordinate(map, shipLength) {
     let possableOptions = this.findPossibleOptions(map, shipLength);
-    console.log(possableOptions);
+    let minRandValue = 0;
+    let maxRandValue = possableOptions.length;
+
+    let randomCoordinate = this.getRandomNumber(minRandValue, maxRandValue);
+    this.aft = possableOptions[randomCoordinate];
   }
 
   findPossibleOptions(map, shipLength) {
     let options = [];
-    options.push(this.countSpacesRight(map, shipLength));
-    options.push(this.countSpacesLeft(map, shipLength));
-    options.push(this.countSpacesUp(map, ))
+    const LEFT = "L";
+    const RIGHT = "R";
+    const UP = "U";
+    const DOWN = "D";
+
+    options.push(this.countVerticalSpaces(UP, shipLength));
+    options.push(this.countHorizontalSpaces(RIGHT, shipLength));
+    options.push(this.countVerticalSpaces(DOWN, shipLength));
+    options.push(this.countHorizontalSpaces(LEFT, shipLength));
+    options = options.filter(coordinate => coordinate !== null);
+
     return options;
 
   }
 
-  countSpacesRight(map, shipLength) { 
-    let start = this.bow.charCodeAt(0);
-    let end = start + this[shipLength] - 1;
-    end = String.fromCharCode(end);
+  countVerticalSpaces(direction, shipLength) {
+    let start = Number(this.bow[1]);
+    if (this.bow.length === 3) {
+      start = 10;
+    }
+    let end = null;
 
-    if (end <= "J") {
-      if (this.bow.length === 3) {
-        return end + "10";
-      } else {
-        return end + String(this.bow[1]);
-      }
-    } else {
-      return null;
+    if (direction === "D") {
+      if (start === 10) return null;
+
+      end = start + this[shipLength] - 1;
+
+      if (end > 10) return null;
+
+      return this.bow[0] + String(end);
+
+    } else if (direction === "U") {
+      end = start - (this[shipLength] - 1);
+
+      if (end <= 0) return null;
+
+      return this.bow[0] + String(end);
+    }
+
+  }
+
+  countHorizontalSpaces(direction, shipLength) {
+    let start = this.bow.charCodeAt(0);
+    let end = null;
+
+    switch (direction) {
+      case "L":
+        end = start - this[shipLength] + 1;
+        end = String.fromCharCode(end);
+
+        if (end >= "A") {
+          if (this.bow.length === 3) {
+            return end + "10";
+          } else {
+            return end + String(this.bow[1]);
+          }
+        } else {
+          return null;
+        }
+
+      case "R":
+        end = start + this[shipLength] - 1;
+        end = String.fromCharCode(end);
+
+        if (end <= "J") {
+          if (this.bow.length === 3) {
+            return end + "10";
+          } else {
+            return end + String(this.bow[1]);
+          }
+        } else {
+          return null;
+        }
     }
   }
 
@@ -374,9 +440,11 @@ class Computer {
 
     Fleet.shipNames.forEach(ship => {
       this.computerFleet.setShipCoordinates(this.computerMap, ship);
-      this.computerMap.display();
+      this.computerFleet.placeShipIn(this.computerMap);
 
     });
+    console.clear();
+    this.computerMap.display();
 
   }
 }
