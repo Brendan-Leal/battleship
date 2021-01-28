@@ -20,254 +20,274 @@ const INTRO_ASCII = {
   }
 };
 
-class Fleet {
+class Ship {
+  static shipComponents = "<>^V#"
   static bowHorizontal = " > ";
   static aftHorizontal = " < ";
   static shipBodyHorizontal = "###";
   static bowVertical = " ^ ";
   static aftVertical = " v ";
   static shipBodyVertical = " # ";
-  static shipNames = ["carrier", "battleship"]; //["carrier", "battleship", "cruiser", "submarine", "destroyer"];
 
-  constructor() {
-    this.carrier = 6;
-    this.battleship = 5;
-    // this.cruiser = 4;
-    // this.submarine = 3;
-    // this.destroyer = 3;
+  constructor(shipName, shipLength, health) {
+    this.shipName = shipName;
+    this.shipLength = shipLength;
+    this.health = health;
+    this.positionInMap = {};
     this.bow = null;
     this.aft = null;
   }
 
-  placeShipIn(map) {
-    if (this.isHorizontal()) {
-      map.grid[this.bow] = Fleet.bowHorizontal;
-      map.grid[this.aft] = Fleet.aftHorizontal;
+}
 
-      this.fillHorizontalSpace(map);
-    } else if (this.isVertical()) {
-      map.grid[this.bow] = Fleet.bowVertical;
-      map.grid[this.aft] = Fleet.aftVertical;
+class Fleet {
+  static allShipNames = ["carrier", "battleship"]; //["carrier", "battleship", "cruiser", "submarine", "destroyer"];
+  constructor() {
+    this.carrier = new Ship("carrier", 6, 6);
+    this.battleship = new Ship("battleship", 5, 5);
+    this.cruiser = new Ship("cruiser", 4, 4);
+    this.submarine = new Ship("submarine", 3, 3);
+    this.destroyer = new Ship("destroyer", 3, 3);
 
-      this.filVerticalSpace(map);
-    }
   }
 
-  orientShip() {
-    if (this.isHorizontal()) {
-      if (this.bow[0] < this.aft[0]) { // Set the bow to alway be the right most coordinate
-        let temp = this.bow;
-        this.bow = this.aft;
-        this.aft = temp;
+  setShipCoodinates(map, ship) {
+    do {
+      ship.bow = readline.question("Enter the coordinate of where you want the bow to be: ").toUpperCase();
+
+      while (!this.isEmptyCell(ship.bow, map) || !this.isValidInput(ship.bow, map)) {
+        console.log("\nAdmiral! We cannot place this ship there");
+        ship.bow = readline.question("Enter the coordinate of where you want the bow to be: ").toUpperCase();
       }
-    } else if (this.isVertical()) {
+
+      ship.aft = readline.question("Enter the coordinate of where you want the aft to be: ").toUpperCase();
+
+      while (!this.isEmptyCell(ship.aft, map) || !this.isValidInput(ship.aft, map)) {
+        console.log("\nAdmiral! We cannot place this ship there");
+        ship.aft = readline.question("Enter the coordinate of where you want the aft to be: ").toUpperCase();
+      }
+      this.orientShip(ship);
+
+    } while (this.isIntersectingShips(map, ship) || this.desiredLengthNotMet(ship) || this.isDiagonal(ship));
+    console.clear();
+  }
+
+
+  isEmptyCell(value, map) {
+    return map.coordinates[value] === Map.emptyCell;
+  }
+
+  isValidInput(value, map) {
+    return Object.keys(map.coordinates).includes(value);
+  }
+
+  orientShip(ship) {
+    if (this.isHorizontal(ship)) {
+      if (ship.bow[0] < ship.aft[0]) { // Set the bow to alway be the right most coordinate
+        let temp = ship.bow;
+        ship.bow = ship.aft;
+        ship.aft = temp;
+      }
+    } else if (this.isVertical(ship)) {
       // Set the bow to always be the top most coordinate
-      if (this.bow.length === 3) {
-        this.bow = this.aft;
-        this.aft = this.bow[0] + "10";
-      } else if (this.bow[1] > this.aft[1] && this.aft.length !== 3) {
-        let temp = this.bow;
-        this.bow = this.aft;
-        this.aft = temp;
+      if (ship.bow.length === 3) {
+        ship.bow = ship.aft;
+        ship.aft = ship.bow[0] + "10";
+      } else if (ship.bow[1] > ship.aft[1] && ship.aft.length !== 3) {
+        let temp = ship.bow;
+        ship.bow = ship.aft;
+        ship.aft = temp;
       }
     }
   }
 
-  filVerticalSpace(map) {
-    let start = Number(this.bow[1]) + 1;
-    let end = this.aft[1];
-    if (this.aft.length === 3) {
+  isHorizontal(ship) {
+    // Horizontal coordinates will always end in the same number
+    return ship.bow[ship.bow.length - 1] === ship.aft[ship.aft.length - 1];
+  }
+
+  isVertical(ship) {
+    // vertical coordinates will always start with the same letter.
+    return ship.bow[0] === ship.aft[0];
+  }
+
+  isIntersectingShips(map, ship) {
+    if (this.isHorizontal(ship)) {
+      let start = ship.aft.charCodeAt(0) + 1;
+      let end = ship.bow.charCodeAt(0);
+
+      for (start; start < end; start++) {
+        let number = ship.bow[1];
+
+        if (ship.bow.length === 3) number = 10;
+
+        let coordinateValue = String.fromCharCode(start) + number;
+
+        if (map.coordinates[coordinateValue] !== Map.emptyCell) {
+          console.log("\nAdmiral! We don't want our fleet to collide. Use better judgment or be removed from command.");
+          return true;
+        }
+      }
+      return false;
+
+    } else if (this.isVertical(ship)) {
+      let start = Number(ship.bow[1]) + 1;
+      let end = ship.aft[1];
+
+      if (ship.aft.length === 3) {
+        end = 10;
+      }
+
+      for (start; start < end; start++) {
+        let coordinateValue = ship.bow[0] + String(start);
+        if (map.coordinates[coordinateValue] !== Map.emptyCell) {
+          console.log("\nAdmiral! We don't want our fleet to collide. Use better judgment or be removed from command.");
+          return true;
+        }
+      }
+      return false;
+    }
+  }
+
+  desiredLengthNotMet(ship) {
+    if (this.isHorizontal(ship)) {
+      let start = ship.aft.charCodeAt(0);
+      let end = ship.bow.charCodeAt(0);
+
+      if ((end - start) + 1 !== ship.shipLength) {
+        console.log("\nAdmiral! Make sure the the ships occupies the correct number of spaces");
+      }
+
+      return (end - start) + 1 !== ship.shipLength;
+
+    } else if (this.isVertical(ship)) {
+      let start = Number(ship.bow[1]);
+      let end = Number(ship.aft[1]);
+      if (ship.aft.length === 3) {
+        end = 10;
+      }
+
+      if ((end - start) + 1 !== ship.shipLength) {
+        console.log("\nAdmiral! Make sure the the ships occupies the correct number of spaces");
+      }
+      return (end - start) + 1 !== ship.shipLength;
+    }
+  }
+
+  isDiagonal(ship) {
+    if (!this.isHorizontal(ship) && !this.isVertical(ship)) {
+      console.log("\nAdmiral! Our fleet is unable to orientate itself diagonally. Please follow the rules of engagement!");
+    }
+    return !this.isHorizontal(ship) && !this.isVertical(ship);
+  }
+
+  placeShipInMap(ship, map) {
+    if (this.isHorizontal(ship)) {
+      map.coordinates[ship.bow] = Ship.bowHorizontal;
+      map.coordinates[ship.aft] = Ship.aftHorizontal;
+
+      ship.positionInMap[ship.bow] = Ship.bowHorizontal;
+      ship.positionInMap[ship.aft] = Ship.aftHorizontal;
+
+      this.fillHorizontalSpace(map, ship);
+    } else if (this.isVertical(ship)) {
+      map.coordinates[ship.bow] = Ship.bowVertical;
+      map.coordinates[ship.aft] = Ship.aftVertical;
+
+      ship.positionInMap[ship.bow] = Ship.bowVertical;
+      ship.positionInMap[ship.aft] = Ship.aftVertical;
+      this.filVerticalSpace(map, ship);
+    }
+  }
+
+  fillHorizontalSpace(map, ship) {
+    let start = ship.aft.charCodeAt(0) + 1;
+    let end = ship.bow.charCodeAt(0);
+
+    for (start; start < end; start++) {
+      let number = ship.bow[1];
+      if (ship.bow.length === 3) number = 10;
+
+      let coordinateValue = String.fromCharCode(start) + number;
+
+      map.coordinates[coordinateValue] = Ship.shipBodyHorizontal;
+      ship.positionInMap[coordinateValue] = Ship.shipBodyHorizontal
+    }
+  }
+
+  filVerticalSpace(map, ship) {
+    let start = Number(ship.bow[1]) + 1;
+    let end = ship.aft[1];
+    if (ship.aft.length === 3) {
       end = 10;
     }
 
     for (start; start < end; start++) {
-      let gridPosition = this.bow[0] + String(start);
-      map.grid[gridPosition] = Fleet.shipBodyVertical;
+      let coordinateValue = ship.bow[0] + String(start);
+      map.coordinates[coordinateValue] = Ship.shipBodyVertical;
+      ship.positionInMap[coordinateValue] = Ship.shipBodyVertical;
     }
-  }
-
-  fillHorizontalSpace(map) {
-    let start = this.aft.charCodeAt(0) + 1;
-    let end = this.bow.charCodeAt(0);
-
-    for (start; start < end; start++) {
-      let number = this.bow[1];
-      if (this.bow.length === 3) number = 10;
-
-      let gridPosition = String.fromCharCode(start) + number;
-
-      map.grid[gridPosition] = Fleet.shipBodyHorizontal;
-    }
-  }
-
-  isHorizontal() {
-    // Horizontal coordinates will always end in the same number
-    return this.bow[this.bow.length - 1] === this.aft[this.aft.length - 1];
-  }
-
-  isVertical() {
-    // vertical coordinates will always start with the same letter.
-    return this.bow[0] === this.aft[0];
-  }
-
-  setShipCoordinates(map, shipLength) {
-    do {
-      this.bow = readline.question("Enter the coordinate of where you want the bow to be: ").toUpperCase();
-
-      while (!this.isEmptySquare(this.bow, map) || !this.isValidInput(this.bow, map)) {
-        console.log("\nAdmiral! We cannot place this ship there");
-        this.bow = readline.question("Enter the coordinate of where you want the bow to be: ").toUpperCase();
-      }
-
-      this.aft = readline.question("Enter the coordinate of where you want the aft to be: ").toUpperCase();
-
-      while (!this.isEmptySquare(this.aft, map) || !this.isValidInput(this.aft, map)) {
-        console.log("\nAdmiral! We cannot place this ship there");
-        this.aft = readline.question("Enter the coordinate of where you want the aft to be: ").toUpperCase();
-      }
-      this.orientShip();
-    } while (this.isIntersectingShips(map) || this.desiredLengthNotMet(shipLength) || this.isDiagonal());
-  }
-
-  isDiagonal() {
-    if (!this.isHorizontal() && !this.isVertical()) {
-      console.log("\nAdmiral! Our fleet is unable to orientate itself diagonally. Please follow the rules of engagement!");
-    }
-    return !this.isHorizontal() && !this.isVertical();
-  }
-
-  desiredLengthNotMet(shipLength) {
-    if (this.isHorizontal()) {
-      let start = this.aft.charCodeAt(0);
-      let end = this.bow.charCodeAt(0);
-
-      if ((end - start) + 1 !== this[shipLength]) {
-        console.log("\nAdmiral! Make sure the the ships occupies the correct number of spaces");
-      }
-
-      return (end - start) + 1 !== this[shipLength];
-
-    } else if (this.isVertical()) {
-      let start = Number(this.bow[1]);
-      let end = Number(this.aft[1]);
-      if (this.aft.length === 3) {
-        end = 10;
-      }
-
-      if ((end - start) + 1 !== this[shipLength]) {
-        console.log("\nAdmiral! Make sure the the ships occupies the correct number of spaces");
-      }
-      return (end - start) + 1 !== this[shipLength];
-    }
-  }
-
-  isIntersectingShips(map) {
-    if (this.isHorizontal()) {
-      let start = this.aft.charCodeAt(0) + 1;
-      let end = this.bow.charCodeAt(0);
-
-      for (start; start < end; start++) {
-        let number = this.bow[1];
-
-        if (this.bow.length === 3) number = 10;
-
-        let gridPosition = String.fromCharCode(start) + number;
-
-        if (map.grid[gridPosition] !== Map.emptySquare) {
-          console.log("\nAdmiral! We don't want our fleet to collide. Use better judgment or be removed from command.");
-          return true;
-        }
-      }
-      return false;
-
-    } else if (this.isVertical()) {
-      let start = Number(this.bow[1]) + 1;
-      let end = this.aft[1];
-
-      if (this.aft.length === 3) {
-        end = 10;
-      }
-
-      for (start; start < end; start++) {
-        let gridPosition = this.bow[0] + String(start);
-        if (map.grid[gridPosition] !== Map.emptySquare) {
-          console.log("\nAdmiral! We don't want our fleet to collide. Use better judgment or be removed from command.");
-          return true;
-        }
-      }
-      return false;
-    }
-  }
-
-  isEmptySquare(coordinate, map) {
-    return map.grid[coordinate] === Map.emptySquare;
-  }
-
-  isValidInput(coordinate, map) {
-    return Object.keys(map.grid).includes(coordinate);
   }
 }
 
 class ComputerFleet extends Fleet {
-  setShipCoordinates(map, shipLength) {
+  constructor() {
+    super();
+  }
+
+  setRandomShipCoordinates(map, ship) {
     do {
-      this.setRandomBowCoordinate(map);
+      ship.bow = this.getRandomBowCoordinate(map);
+      ship.aft = this.getRandomAftCoordinate(map, ship);
 
-      this.setAftCoordinate(map, shipLength);
+      this.orientShip(ship);
 
-      while (!this.isEmptySquare(this.bow, map) || !this.isValidInput(this.bow, map)) {
-        this.setAftCoordinate(map, shipLength);
-      }
-
-      this.orientShip();
-    } while (this.isIntersectingShips(map) || this.desiredLengthNotMet(shipLength) || this.isDiagonal());
-
+    } while (this.isIntersectingShips(map, ship) || this.desiredLengthNotMet(ship) || this.isDiagonal(ship));
   }
 
-  setRandomBowCoordinate(map) {
+  getRandomBowCoordinate(map) {
     let min = 0;
-    let max = Object.keys(map.grid).length;
+    let max = Object.keys(map.coordinates).length + 1;
+    let randomCoordinate = Object.keys(map.coordinates)[this.getRandomNumber(min, max)];
 
-    this.bow = Object.keys(map.grid)[this.getRandomNumber(min, max)];
-
-    while (!this.isEmptySquare(this.bow, map) || !this.isValidInput(this.bow, map)) {
-      this.bow = Object.keys(map.grid)[this.getRandomNumber(min, max)];
+    while (!this.isEmptyCell(randomCoordinate, map)) {
+      randomCoordinate = Object.keys(map.coordinates)[this.getRandomNumber(min, max)];
     }
+    return randomCoordinate;
   }
 
-  setAftCoordinate(map, shipLength) {
-    let possableOptions = this.findPossibleOptions(map, shipLength);
+  getRandomAftCoordinate(map, ship) {
+    let possableOptions = this.findPossibleOptions(map, ship);
 
     possableOptions = possableOptions.filter(coordinate => {
-      return this.isEmptySquare(coordinate, map);
+      return this.isEmptyCell(coordinate, map);
     });
 
-    let minRandValue = 0;
-    let maxRandValue = possableOptions.length;
+    let min = 0;
+    let max = possableOptions.length;
+    let randomIndex = this.getRandomNumber(min, max);
 
-    let randomCoordinate = this.getRandomNumber(minRandValue, maxRandValue);
-    this.aft = possableOptions[randomCoordinate];
+    return possableOptions[randomIndex];
   }
 
-  findPossibleOptions(map, shipLength) {
+  findPossibleOptions(map, ship) {
     let options = [];
     const LEFT = "L";
     const RIGHT = "R";
     const UP = "U";
     const DOWN = "D";
 
-    options.push(this.countVerticalSpaces(UP, shipLength));
-    options.push(this.countHorizontalSpaces(RIGHT, shipLength));
-    options.push(this.countVerticalSpaces(DOWN, shipLength));
-    options.push(this.countHorizontalSpaces(LEFT, shipLength));
+    options.push(this.countVerticalSpaces(UP, ship));
+    options.push(this.countHorizontalSpaces(RIGHT, ship));
+    options.push(this.countVerticalSpaces(DOWN, ship));
+    options.push(this.countHorizontalSpaces(LEFT, ship));
     options = options.filter(coordinate => coordinate !== null);
-
     return options;
   }
 
-  countVerticalSpaces(direction, shipLength) {
-    let start = Number(this.bow[1]);
-    if (this.bow.length === 3) {
+  countVerticalSpaces(direction, ship) {
+    let start = Number(ship.bow[1]);
+    if (ship.bow.length === 3) {
       start = 10;
     }
 
@@ -276,53 +296,52 @@ class ComputerFleet extends Fleet {
     if (direction === "D") {
       if (start === 10) return null;
 
-      end = start + this[shipLength] - 1;
+      end = start + ship.shipLength - 1;
 
       if (end > 10) return null;
 
-      return this.bow[0] + String(end);
+      return ship.bow[0] + String(end);
 
     } else if (direction === "U") {
-      end = start - (this[shipLength] - 1);
+      end = start - (ship.shipLength - 1);
 
       if (end <= 0) return null;
 
-      return this.bow[0] + String(end);
+      return ship.bow[0] + String(end);
     }
   }
 
-  countHorizontalSpaces(direction, shipLength) {
-    let start = this.bow.charCodeAt(0);
+  countHorizontalSpaces(direction, ship) {
+    let start = ship.bow.charCodeAt(0);
     let end = null;
 
-    switch (direction) {
-      case "L":
-        end = start - this[shipLength] + 1;
-        end = String.fromCharCode(end);
+    if (direction === "L") {
 
-        if (end >= "A") {
-          if (this.bow.length === 3) {
-            return end + "10";
-          } else {
-            return end + String(this.bow[1]);
-          }
+      end = start - ship.shipLength + 1;
+      end = String.fromCharCode(end);
+
+      if (end >= "A") {
+        if (ship.bow.length === 3) {
+          return end + "10";
         } else {
-          return null;
+          return end + String(ship.bow[1]);
         }
+      } else {
+        return null;
+      }
+    } else if (direction === "R") {
+      end = start + ship.shipLength - 1;
+      end = String.fromCharCode(end);
 
-      case "R":
-        end = start + this[shipLength] - 1;
-        end = String.fromCharCode(end);
-
-        if (end <= "J") {
-          if (this.bow.length === 3) {
-            return end + "10";
-          } else {
-            return end + String(this.bow[1]);
-          }
+      if (end <= "J") {
+        if (ship.bow.length === 3) {
+          return end + "10";
         } else {
-          return null;
+          return end + String(ship.bow[1]);
         }
+      } else {
+        return null;
+      }
     }
   }
 
@@ -331,160 +350,233 @@ class ComputerFleet extends Fleet {
   }
 }
 
-class Map {
-  static columnLetters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
-  static emptySquare = "   ";
+class Player {
 
-  constructor(playerType) {
-    this.playerType = playerType;
-    this.grid = {};
-    this.emptyGrid = {};
+  fireUpon(combatant) {
+    let coordinate = readline.question("Admiral! Choose a coordinate to fire upon: ").toUpperCase(); // Needs validation
+
+    let coordinateValue = combatant.map.coordinates[coordinate];
+
+
+    combatant.map.updateMap(coordinate, coordinateValue);
+  }
+
+
+
+
+}
+
+class Human extends Player {
+  constructor() {
+    super();
+    this.map = new Map("human");
+    this.fleet = new Fleet();
+  }
+
+  setFleetPosition() {
+    Fleet.allShipNames.forEach(shipName => {
+      let shipLength = this.fleet[shipName].shipLength;
+      let ship = this.fleet[shipName];
+
+      this.map.displayWarRoomMap();
+
+      console.log(`The ${shipName} occupies ${shipLength} spaces`);
+
+      this.fleet.setShipCoodinates(this.map, ship);
+
+      this.fleet.placeShipInMap(ship, this.map);
+    });
+
+  }
+
+}
+
+class Computer extends Player {
+  constructor() {
+    super();
+    this.map = new Map("computer");
+    this.fleet = new ComputerFleet();
+  }
+
+  setFleepPosition() {
+    Fleet.allShipNames.forEach(shipName => {
+      let shipLength = this.fleet[shipName].shipLength;
+      let ship = this.fleet[shipName];
+
+      this.fleet.setRandomShipCoordinates(this.map, ship);
+
+      this.fleet.placeShipInMap(ship, this.map);
+    });
+    console.clear();
+  }
+
+}
+
+class Map {
+  static hitMarker = " X ";
+  static missMarker = " M ";
+  static emptyCell = "   ";
+  static columnLetters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+  static topRow = `|   | A | B | C | D | E | F | G | H | I | J |`;
+  static midLine = "|---|---|---|---|---|---|---|---|---|---|---|";
+  static line = "-".repeat(this.midLine.length);
+
+  constructor(mapOwner) {
+    this.mapOwner = mapOwner;
+    this.coordinates = {};
+    this.emptyCoordinate = {};
 
     for (let row = 1; row <= 10; row++) {
       for (let column = 0; column < Map.columnLetters.length; column++) {
         let coordinate = Map.columnLetters[column] + String(row);
-        this.grid[coordinate] = Map.emptySquare;
-        this.emptyGrid[coordinate] = Map.emptySquare;
+        this.coordinates[coordinate] = Map.emptyCell;
+        this.emptyCoordinate[coordinate] = Map.emptyCell;
       }
     }
-
-    this.line0 = `|   | A | B | C | D | E | F | G | H | I | J |`;
-    this.horizontalLine = "|---|---|---|---|---|---|---|---|---|---|---|";
-    this.line = "-".repeat(this.horizontalLine.length);
   }
 
-  display(isMapConcealed = true) {
-    let coordinate = this.emptyGrid;
-    if (isMapConcealed === false) {
-      coordinate = this.grid;
+  updateMap(coordinate, coordinateValue) {
+    let marker = null;
+
+    if (this.isHit(coordinateValue)) {
+      marker = Map.hitMarker;
+    } else if (this.isMiss(coordinateValue)) {
+      marker = Map.missMarker;
     }
 
-    console.log(this.line);
-    console.log(this.line0);
-    console.log(this.horizontalLine);
-
-    console.log(`| 1 |${coordinate.A1}|${coordinate.B1}|${coordinate.C1}|${coordinate.D1}|${coordinate.E1}|${coordinate.F1}|${coordinate.G1}|${coordinate.H1}|${coordinate.I1}|${coordinate.J1}|`);
-
-    console.log(this.horizontalLine);
-    console.log(`| 2 |${coordinate.A2}|${coordinate.B2}|${coordinate.C2}|${coordinate.D2}|${coordinate.E2}|${coordinate.F2}|${coordinate.G2}|${coordinate.H2}|${coordinate.I2}|${coordinate.J2}|`);
-
-    console.log(this.horizontalLine);
-    console.log(`| 3 |${coordinate.A3}|${coordinate.B3}|${coordinate.C3}|${coordinate.D3}|${coordinate.E3}|${coordinate.F3}|${coordinate.G3}|${coordinate.H3}|${coordinate.I3}|${coordinate.J3}|`);
-
-    console.log(this.horizontalLine);
-    console.log(`| 4 |${coordinate.A4}|${coordinate.B4}|${coordinate.C4}|${coordinate.D4}|${coordinate.E4}|${coordinate.F4}|${coordinate.G4}|${coordinate.H4}|${coordinate.I4}|${coordinate.J4}|`);
-
-    console.log(this.horizontalLine);
-    console.log(`| 5 |${coordinate.A5}|${coordinate.B5}|${coordinate.C5}|${coordinate.D5}|${coordinate.E5}|${coordinate.F5}|${coordinate.G5}|${coordinate.H5}|${coordinate.I5}|${coordinate.J5}|`);
-
-    console.log(this.horizontalLine);
-    console.log(`| 6 |${coordinate.A6}|${coordinate.B6}|${coordinate.C6}|${coordinate.D6}|${coordinate.E6}|${coordinate.F6}|${coordinate.G6}|${coordinate.H6}|${coordinate.I6}|${coordinate.J6}|`);
-
-    console.log(this.horizontalLine);
-    console.log(`| 7 |${coordinate.A7}|${coordinate.B7}|${coordinate.C7}|${coordinate.D7}|${coordinate.E7}|${coordinate.F7}|${coordinate.G7}|${coordinate.H7}|${coordinate.I7}|${coordinate.J7}|`);
-
-    console.log(this.horizontalLine);
-    console.log(`| 8 |${coordinate.A8}|${coordinate.B8}|${coordinate.C8}|${coordinate.D8}|${coordinate.E8}|${coordinate.F8}|${coordinate.G8}|${coordinate.H8}|${coordinate.I8}|${coordinate.J8}|`);
-
-    console.log(this.horizontalLine);
-    console.log(`| 9 |${coordinate.A9}|${coordinate.B9}|${coordinate.C9}|${coordinate.D9}|${coordinate.E9}|${coordinate.F9}|${coordinate.G9}|${coordinate.H9}|${coordinate.I9}|${coordinate.J9}|`);
-
-    console.log(this.horizontalLine);
-    console.log(`|10 |${coordinate.A10}|${coordinate.B10}|${coordinate.C10}|${coordinate.D10}|${coordinate.E10}|${coordinate.F10}|${coordinate.G10}|${coordinate.H10}|${coordinate.I10}|${coordinate.J10}|`);
-
-    console.log(this.line);
-
-    this.displayShips();    
+    this.coordinates[coordinate] = marker;
+    this.emptyCoordinate[coordinate] = marker;
   }
 
-  displayShips() {
-    if (this.playerType === "player") {
-      console.log(`Ships in your fleet: (${Fleet.shipNames.join(", ")})\n`);
-    } else {
-      console.log(`Ships in the enemy fleet: (${Fleet.shipNames.join(", ")})\n`);
+  isMiss(value) {
+    return value === Map.emptyCell;
+  }
+
+  isHit(value) {
+    return Ship.shipComponents.includes(value.trim()[0]);
+  }
+
+  display(concealMap = true) {
+    let cell = this.emptyCoordinate;
+    if (concealMap === false) {
+      cell = this.coordinates;
+    }
+
+    this.displayMapHeading();
+
+    console.log(Map.line);
+    console.log(Map.topRow);
+    console.log(Map.midLine);
+
+    console.log(`| 1 |${cell.A1}|${cell.B1}|${cell.C1}|${cell.D1}|${cell.E1}|${cell.F1}|${cell.G1}|${cell.H1}|${cell.I1}|${cell.J1}|`);
+
+    console.log(Map.midLine);
+
+    console.log(`| 2 |${cell.A2}|${cell.B2}|${cell.C2}|${cell.D2}|${cell.E2}|${cell.F2}|${cell.G2}|${cell.H2}|${cell.I2}|${cell.J2}|`);
+
+    console.log(Map.midLine);
+
+    console.log(`| 3 |${cell.A3}|${cell.B3}|${cell.C3}|${cell.D3}|${cell.E3}|${cell.F3}|${cell.G3}|${cell.H3}|${cell.I3}|${cell.J3}|`);
+
+    console.log(Map.midLine);
+
+    console.log(`| 4 |${cell.A4}|${cell.B4}|${cell.C4}|${cell.D4}|${cell.E4}|${cell.F4}|${cell.G4}|${cell.H4}|${cell.I4}|${cell.J4}|`);
+
+    console.log(Map.midLine);
+
+    console.log(`| 5 |${cell.A5}|${cell.B5}|${cell.C5}|${cell.D5}|${cell.E5}|${cell.F5}|${cell.G5}|${cell.H5}|${cell.I5}|${cell.J5}|`);
+
+    console.log(Map.midLine);
+
+    console.log(`| 6 |${cell.A6}|${cell.B6}|${cell.C6}|${cell.D6}|${cell.E6}|${cell.F6}|${cell.G6}|${cell.H6}|${cell.I6}|${cell.J6}|`);
+
+    console.log(Map.midLine);
+
+    console.log(`| 7 |${cell.A7}|${cell.B7}|${cell.C7}|${cell.D7}|${cell.E7}|${cell.F7}|${cell.G7}|${cell.H7}|${cell.I7}|${cell.J7}|`);
+
+    console.log(Map.midLine);
+
+    console.log(`| 8 |${cell.A8}|${cell.B8}|${cell.C8}|${cell.D8}|${cell.E8}|${cell.F8}|${cell.G8}|${cell.H8}|${cell.I8}|${cell.J8}|`);
+
+    console.log(Map.midLine);
+
+    console.log(`| 9 |${cell.A9}|${cell.B9}|${cell.C9}|${cell.D9}|${cell.E9}|${cell.F9}|${cell.G9}|${cell.H9}|${cell.I9}|${cell.J9}|`);
+
+    console.log(Map.midLine);
+
+    console.log(`|10 |${cell.A10}|${cell.B10}|${cell.C10}|${cell.D10}|${cell.E10}|${cell.F10}|${cell.G10}|${cell.H10}|${cell.I10}|${cell.J10}|`);
+
+    console.log(Map.line);
+    console.log("\n");
+  }
+
+  displayMapHeading() {
+    if (this.mapOwner === "human") {
+      console.log("Your Fleet Map".padStart(29, " "));
+    } else if (this.mapOwner === "computer") {
+      console.log("Enemy Fleet Map".padStart(29, " "));
     }
   }
-}
 
-const Combat = {
-  fireUpon(combatant) {
-    let coordinate = readline.question("Admiral! Choose a coordinate to fire upon: ").toUpperCase(); // Needs validation
-    console.log(combatant.computerMap.grid[coordinate]);
-  },
-};
-
-class Player {
-  constructor() {
-    this.playersMap = new Map("player");
-    this.fleet = new Fleet();
-  }
-
-  setFleetPosition(isMapConcealed) {
-    Fleet.shipNames.forEach(ship => {
-      console.clear();
-      console.log("Welcome to the war room Admiral.");
-      console.log(`- This is your fleet map. You have 5 ships of varying sizes to distribute throughout the map.\n- Coordinates are entered letter first followed by the number. Ex: A5\n- Ships can either be placed horizontally or vertically. No diagonal placements.`);
-
-      this.playersMap.display(isMapConcealed);
-
-      console.log(`The ${ship} occupies ${this.fleet[ship]} spaces`);
-
-      this.fleet.setShipCoordinates(this.playersMap, ship);
-
-      this.fleet.placeShipIn(this.playersMap);
-      console.clear();
-    });
-  }
-}
-Object.assign(Player.prototype, Combat);
-
-class Computer {
-  constructor() {
-    this.computerMap = new Map("computer");
-    this.computerFleet = new ComputerFleet();
-  }
-
-  initializeShipPlacement() {
-    Fleet.shipNames.forEach(ship => {
-      this.computerFleet.setShipCoordinates(this.computerMap, ship);
-      this.computerFleet.placeShipIn(this.computerMap);
-
-      console.clear();
-    });
+  displayWarRoomMap() {
+    let concealMap = false;
     console.clear();
+    console.log("Welcome to the war room Admiral.");
+    console.log(`- This is your fleet map. You have 5 ships of varying sizes to distribute throughout the map.\n- Coordinates are entered letter first followed by the number. Ex: A5\n- Ships can either be placed horizontally or vertically. No diagonal placements.\n`);
+
+    this.display(concealMap);
   }
+
+  displayMapInCombat() {
+    let concealMap = false;
+
+    this.display(concealMap);
+  }
+
+  displayBlankMap() {
+
+  }
+
+
 }
-Object.assign(Computer.prototype, Combat);
+
+
+
+
+
 
 class BattleShipGame {
   constructor() {
-    this.player = new Player();
+    this.human = new Human();
     this.computer = new Computer();
   }
 
   play() {
-    // INTRO_ASCII.display();
-    let isMapConcealed = false;
+    // INTRO_ASCII.display(); 
+    this.human.setFleetPosition();
+    this.computer.setFleepPosition();
 
-    this.player.setFleetPosition(isMapConcealed);
+    while (true) {
+      this.computer.map.display(false);
+      this.human.map.displayMapInCombat();
+      this.human.fireUpon(this.computer);
 
-    this.computer.initializeShipPlacement();
+      break;
+    }
 
-    console.log("Enemy Fleet Map");
-    this.computer.computerMap.display();
-    this.computer.computerMap.display(isMapConcealed);
+    this.computer.map.display(false);
+    this.human.map.displayMapInCombat();
 
-    console.log("\n\nYour Fleet Map");
-    this.player.playersMap.display(isMapConcealed);
 
-    // this.player.fireUpon(this.computer);
-    
+
+
 
   }
 }
 
-let battleShip = new BattleShipGame();
-battleShip.play()
+let battleship = new BattleShipGame();
+battleship.play();
+
 
 
 
