@@ -37,7 +37,6 @@ class Ship {
     this.bow = null;
     this.aft = null;
   }
-
 }
 
 class Fleet {
@@ -55,14 +54,14 @@ class Fleet {
     do {
       ship.bow = readline.question("Enter the coordinate of where you want the bow to be: ").toUpperCase();
 
-      while (!this.isEmptyCell(ship.bow, map) || !this.isValidInput(ship.bow, map)) {
+      while (!this.grid1_hasEmptyCell(ship.bow, map) || !this.isValidInput(ship.bow, map)) {
         console.log("\nAdmiral! We cannot place this ship there");
         ship.bow = readline.question("Enter the coordinate of where you want the bow to be: ").toUpperCase();
       }
 
       ship.aft = readline.question("Enter the coordinate of where you want the aft to be: ").toUpperCase();
 
-      while (!this.isEmptyCell(ship.aft, map) || !this.isValidInput(ship.aft, map)) {
+      while (!this.grid1_hasEmptyCell(ship.aft, map) || !this.isValidInput(ship.aft, map)) {
         console.log("\nAdmiral! We cannot place this ship there");
         ship.aft = readline.question("Enter the coordinate of where you want the aft to be: ").toUpperCase();
       }
@@ -73,12 +72,16 @@ class Fleet {
   }
 
 
-  isEmptyCell(value, map) {
-    return map.coordinates[value] === Map.emptyCell;
+  grid1_hasEmptyCell(value, map) {
+    return map.grid1[value] === Map.emptyCell;
+  }
+
+  grid2_HasEmptyCell (value, map) {
+    return map.grid2[value] === Map.emptyCell;
   }
 
   isValidInput(value, map) {
-    return Object.keys(map.coordinates).includes(value);
+    return Object.keys(map.grid1).includes(value);
   }
 
   orientShip(ship) {
@@ -123,7 +126,7 @@ class Fleet {
 
         let coordinateValue = String.fromCharCode(start) + number;
 
-        if (map.coordinates[coordinateValue] !== Map.emptyCell) {
+        if (map.grid1[coordinateValue] !== Map.emptyCell) {
           console.log("\nAdmiral! We don't want our fleet to collide. Use better judgment or be removed from command.");
           return true;
         }
@@ -140,7 +143,7 @@ class Fleet {
 
       for (start; start < end; start++) {
         let coordinateValue = ship.bow[0] + String(start);
-        if (map.coordinates[coordinateValue] !== Map.emptyCell) {
+        if (map.grid1[coordinateValue] !== Map.emptyCell) {
           console.log("\nAdmiral! We don't want our fleet to collide. Use better judgment or be removed from command.");
           return true;
         }
@@ -183,16 +186,16 @@ class Fleet {
 
   placeShipInMap(ship, map) {
     if (this.isHorizontal(ship)) {
-      map.coordinates[ship.bow] = Ship.bowHorizontal;
-      map.coordinates[ship.aft] = Ship.aftHorizontal;
+      map.grid1[ship.bow] = Ship.bowHorizontal;
+      map.grid1[ship.aft] = Ship.aftHorizontal;
 
       ship.positionInMap[ship.bow] = Ship.bowHorizontal;
       ship.positionInMap[ship.aft] = Ship.aftHorizontal;
 
       this.fillHorizontalSpace(map, ship);
     } else if (this.isVertical(ship)) {
-      map.coordinates[ship.bow] = Ship.bowVertical;
-      map.coordinates[ship.aft] = Ship.aftVertical;
+      map.grid1[ship.bow] = Ship.bowVertical;
+      map.grid1[ship.aft] = Ship.aftVertical;
 
       ship.positionInMap[ship.bow] = Ship.bowVertical;
       ship.positionInMap[ship.aft] = Ship.aftVertical;
@@ -210,7 +213,7 @@ class Fleet {
 
       let coordinateValue = String.fromCharCode(start) + number;
 
-      map.coordinates[coordinateValue] = Ship.shipBodyHorizontal;
+      map.grid1[coordinateValue] = Ship.shipBodyHorizontal;
       ship.positionInMap[coordinateValue] = Ship.shipBodyHorizontal
     }
   }
@@ -224,9 +227,13 @@ class Fleet {
 
     for (start; start < end; start++) {
       let coordinateValue = ship.bow[0] + String(start);
-      map.coordinates[coordinateValue] = Ship.shipBodyVertical;
+      map.grid1[coordinateValue] = Ship.shipBodyVertical;
       ship.positionInMap[coordinateValue] = Ship.shipBodyVertical;
     }
+  }
+
+  getRandomNumber(min, max) {
+    return Math.floor(Math.random() * (max - min) + min);
   }
 }
 
@@ -247,11 +254,11 @@ class ComputerFleet extends Fleet {
 
   getRandomBowCoordinate(map) {
     let min = 0;
-    let max = Object.keys(map.coordinates).length + 1;
-    let randomCoordinate = Object.keys(map.coordinates)[this.getRandomNumber(min, max)];
+    let max = Object.keys(map.grid1).length + 1;
+    let randomCoordinate = Object.keys(map.grid1)[this.getRandomNumber(min, max)];
 
-    while (!this.isEmptyCell(randomCoordinate, map)) {
-      randomCoordinate = Object.keys(map.coordinates)[this.getRandomNumber(min, max)];
+    while (!this.grid1_hasEmptyCell(randomCoordinate, map)) {
+      randomCoordinate = Object.keys(map.grid1)[this.getRandomNumber(min, max)];
     }
     return randomCoordinate;
   }
@@ -260,7 +267,7 @@ class ComputerFleet extends Fleet {
     let possableOptions = this.findPossibleOptions(map, ship);
 
     possableOptions = possableOptions.filter(coordinate => {
-      return this.isEmptyCell(coordinate, map);
+      return this.grid1_hasEmptyCell(coordinate, map);
     });
 
     let min = 0;
@@ -345,18 +352,26 @@ class ComputerFleet extends Fleet {
     }
   }
 
-  getRandomNumber(min, max) {
-    return Math.floor(Math.random() * (max - min) + min);
+  getRandomCoordinateFrom(map) {
+    let min = 0;
+    let max = Object.keys(map.grid2).length + 1;
+    let randomCoordinate = Object.keys(map.grid2)[this.getRandomNumber(min, max)];
+
+    while (!this.grid2_HasEmptyCell(randomCoordinate, map)) {
+      randomCoordinate = Object.keys(map.grid2)[this.getRandomNumber(min, max)];
+    }
+
+    return randomCoordinate;
   }
 }
 
 class Player {
 
   fireUpon(combatant) {
+    // Humans fire on the computer
     let coordinate = readline.question("Admiral! Choose a coordinate to fire upon: ").toUpperCase(); // Needs validation
 
-    let coordinateValue = combatant.map.coordinates[coordinate];
-
+    let coordinateValue = combatant.map.grid1[coordinate];
 
     combatant.map.updateMap(coordinate, coordinateValue);
   }
@@ -400,7 +415,6 @@ class Computer extends Player {
 
   setFleepPosition() {
     Fleet.allShipNames.forEach(shipName => {
-      let shipLength = this.fleet[shipName].shipLength;
       let ship = this.fleet[shipName];
 
       this.fleet.setRandomShipCoordinates(this.map, ship);
@@ -408,6 +422,20 @@ class Computer extends Player {
       this.fleet.placeShipInMap(ship, this.map);
     });
     console.clear();
+  }
+
+  fireUpon(combatant) {
+    console.log("Computer fires");
+
+    let randomCoordinate = this.fleet.getRandomCoordinateFrom(combatant.map);
+    let coordinateValue = combatant.map.grid1[randomCoordinate];
+
+    combatant.map.updateMap(randomCoordinate, coordinateValue)
+    
+
+  
+    // check if a ship has been sunk
+    
   }
 
 }
@@ -423,14 +451,14 @@ class Map {
 
   constructor(mapOwner) {
     this.mapOwner = mapOwner;
-    this.coordinates = {};
-    this.emptyCoordinate = {};
+    this.grid1 = {}; // Holds the values of where the ships are
+    this.grid2 = {}; // Holds the values of where the guesses were made.
 
     for (let row = 1; row <= 10; row++) {
       for (let column = 0; column < Map.columnLetters.length; column++) {
         let coordinate = Map.columnLetters[column] + String(row);
-        this.coordinates[coordinate] = Map.emptyCell;
-        this.emptyCoordinate[coordinate] = Map.emptyCell;
+        this.grid1[coordinate] = Map.emptyCell;
+        this.grid2[coordinate] = Map.emptyCell;
       }
     }
   }
@@ -444,8 +472,8 @@ class Map {
       marker = Map.missMarker;
     }
 
-    this.coordinates[coordinate] = marker;
-    this.emptyCoordinate[coordinate] = marker;
+    this.grid1[coordinate] = marker;
+    this.grid2[coordinate] = marker;
   }
 
   isMiss(value) {
@@ -457,9 +485,9 @@ class Map {
   }
 
   display(concealMap = true) {
-    let cell = this.emptyCoordinate;
+    let cell = this.grid2;
     if (concealMap === false) {
-      cell = this.coordinates;
+      cell = this.grid1;
     }
 
     this.displayMapHeading();
@@ -540,11 +568,6 @@ class Map {
 
 }
 
-
-
-
-
-
 class BattleShipGame {
   constructor() {
     this.human = new Human();
@@ -559,10 +582,15 @@ class BattleShipGame {
     while (true) {
       this.computer.map.display(false);
       this.human.map.displayMapInCombat();
-      this.human.fireUpon(this.computer);
 
-      break;
+      this.human.fireUpon(this.computer);
+      this.computer.fireUpon(this.human);
+
+      
+
+      console.clear();
     }
+    console.clear();
 
     this.computer.map.display(false);
     this.human.map.displayMapInCombat();
