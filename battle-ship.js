@@ -39,10 +39,10 @@ class Ship {
     this.aft = null;
   }
 
-  isShipSunk() {
+  sinkShip() {
     if (this.health === 0) {
       this.isSunk = true;
-    } 
+    }
   }
 }
 
@@ -59,13 +59,13 @@ class Fleet {
 
   isFleetDestroyed() {
     return Fleet.allShipNames.every(ship => {
-     return this[ship].isSunk;
+      return this[ship].isSunk;
     });
   }
 
   setShipCoodinates(map, ship) {
     do {
-      ship.bow = readline.question("Enter the coordinate of where you want the bow to be: ").toUpperCase();
+      ship.bow = readline.question("\nEnter the coordinate of where you want the bow to be: ").toUpperCase();
 
       while (!this.grid1_hasEmptyCell(ship.bow, map) || !this.isValidInput(ship.bow, map)) {
         console.log("\nAdmiral! We cannot place this ship there");
@@ -98,7 +98,7 @@ class Fleet {
     return map.grid1[value] === Map.emptyCell;
   }
 
-  grid2_HasEmptyCell(value, map) {
+  grid2_hasEmptyCell(value, map) {
     return map.grid2[value] === Map.emptyCell;
   }
 
@@ -259,14 +259,14 @@ class Fleet {
   }
 
   updateFleet(combatant, coordinate) {
-    console.log(`coord: ${coordinate}`);
     Fleet.allShipNames.forEach(ship => {
       let shipPossition = Object.keys(combatant.fleet[ship].positionInMap);
+
       if (shipPossition.includes(coordinate)) {
         combatant.fleet[ship].positionInMap[coordinate] = Map.hitMarker;
         combatant.fleet[ship].health -= 1;
       }
-      combatant.fleet[ship].isShipSunk();      
+      combatant.fleet[ship].sinkShip();
     });
 
 
@@ -393,7 +393,7 @@ class ComputerFleet extends Fleet {
     let max = Object.keys(map.grid2).length + 1;
     let randomCoordinate = Object.keys(map.grid2)[this.getRandomNumber(min, max)];
 
-    while (!this.grid2_HasEmptyCell(randomCoordinate, map)) {
+    while (!this.grid2_hasEmptyCell(randomCoordinate, map)) {
       randomCoordinate = Object.keys(map.grid2)[this.getRandomNumber(min, max)];
     }
 
@@ -402,23 +402,27 @@ class ComputerFleet extends Fleet {
 }
 
 class Player {
+  constructor() {
+    this.lastCoordinateFiredOn = null;
+  }
 
   fireUpon(combatant) {
     // Humans fire on the computer
-    let coordinate = readline.question("Admiral! Choose a coordinate to fire upon: ").toUpperCase(); // Needs validation
+    let coordinate = readline.question("\nAdmiral! Choose a coordinate to fire upon: ").toUpperCase();
+
+    while (!combatant.fleet.grid2_hasEmptyCell(coordinate, combatant.map) ||
+      !combatant.fleet.isValidInput(coordinate, combatant.map)) {
+      coordinate = readline.question("Admiral! Choose a coordinate to fire upon: ").toUpperCase();
+    }
 
     let coordinateValue = combatant.map.grid1[coordinate];
 
     combatant.map.updateMap(coordinate, coordinateValue);
 
     combatant.fleet.updateFleet(combatant, coordinate);
-    
-    
+
+    this.lastCoordinateFiredOn = coordinate;
   }
-
-
-
-
 }
 
 class Human extends Player {
@@ -441,9 +445,24 @@ class Human extends Player {
 
       this.fleet.placeShipInMap(ship, this.map);
     });
-
   }
 
+  displayResult(combatant) {
+    if (combatant.map.grid1[this.lastCoordinateFiredOn] === Map.hitMarker) {
+      console.log(`\n${this.lastCoordinateFiredOn} is a HIT!`);
+    } else if (combatant.map.grid1[this.lastCoordinateFiredOn] === Map.missMarker) {
+      console.log(`\n${this.lastCoordinateFiredOn} Missed`);
+    }
+
+    Fleet.allShipNames.forEach(ship => {
+      if (this.lastCoordinateFiredOn in combatant.fleet[ship].positionInMap && 
+        combatant.fleet[ship].isSunk) {
+          console.log(`Good job we sunk their ${combatant.fleet[ship].shipName}`);
+        }
+    });
+
+    readline.question("Press Enter to continue");
+  }
 }
 
 class Computer extends Player {
@@ -465,13 +484,11 @@ class Computer extends Player {
   }
 
   fireUpon(combatant) {
-    console.log("Computer fires");
-
     let randomCoordinate = this.fleet.getRandomCoordinateFrom(combatant.map);
     let coordinateValue = combatant.map.grid1[randomCoordinate];
 
     combatant.map.updateMap(randomCoordinate, coordinateValue);
-    
+
     combatant.fleet.updateFleet(combatant, randomCoordinate);
   }
 }
@@ -499,7 +516,7 @@ class Map {
     }
   }
 
-  updateMap(coordinate, coordinateValue) {    
+  updateMap(coordinate, coordinateValue) {
     let marker = null;
 
     if (this.isHit(coordinateValue)) {
@@ -572,7 +589,6 @@ class Map {
 
     console.log(Map.line);
     this.displayMapFooting(fleet);
-    console.log("\n");
   }
 
   displayMapFooting(fleet) {
@@ -585,6 +601,7 @@ class Map {
 
   displayMapHeading() {
     if (this.mapOwner === "human") {
+      console.log("\n");
       console.log("Your Fleet Map".padStart(29, " "));
     } else if (this.mapOwner === "computer") {
       console.log("Enemy Fleet Map".padStart(29, " "));
@@ -595,7 +612,7 @@ class Map {
     let concealMap = false;
     console.clear();
     console.log("Welcome to the war room Admiral.");
-    console.log(`- This is your fleet map. You have 5 ships of varying sizes to distribute throughout the map.\n- Coordinates are entered letter first followed by the number. Ex: A5\n- Ships can either be placed horizontally or vertically. No diagonal placements.\n`);
+    console.log(`- This is your fleet map. You have 5 ships of varying sizes to distribute throughout the map.\n- Coordinates are entered letter first followed by the number. Ex: A5\n- Ships can either be placed horizontally or vertically. No diagonal placements.`);
 
     this.display(concealMap, fleet);
   }
@@ -614,24 +631,23 @@ class BattleShipGame {
   }
 
   play() {
+    console.clear;
+    let concealMap = true;
     // INTRO_ASCII.display(); 
     this.human.setFleetPosition();
     this.computer.setFleepPosition();
 
     while (!this.human.fleet.isFleetDestroyed() && !this.computer.fleet.isFleetDestroyed()) {
-      this.computer.map.display(false, this.computer.fleet);
+
+      this.computer.map.display(false, this.computer.fleet); // change to concealMap when playing a real game
       this.human.map.displayMapInCombat(this.human.fleet);
 
       this.human.fireUpon(this.computer);
       this.computer.fireUpon(this.human);
 
+      this.human.displayResult(this.computer);
+
       console.clear();
-      console.log(`human Fleet Destroyed: ${this.human.fleet.isFleetDestroyed()}`);
-      console.log(`computer Fleet Destroyed: ${this.computer.fleet.isFleetDestroyed()}`);
-      
-
-
-
     }
     console.clear();
 
@@ -639,7 +655,7 @@ class BattleShipGame {
     this.human.map.displayMapInCombat(this.human.fleet);
 
 
-
+    console.clear();
 
 
   }
