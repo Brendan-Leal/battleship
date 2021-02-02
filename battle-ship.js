@@ -28,6 +28,7 @@ class Ship {
   static bowVertical = " ^ ";
   static aftVertical = " v ";
   static shipBodyVertical = " # ";
+  static sunkShip = " ~ "
 
   constructor(shipName, shipLength, health) {
     this.isSunk = false;
@@ -39,10 +40,16 @@ class Ship {
     this.aft = null;
   }
 
-  sinkShip() {
+  sinkShip(combatant) {
     if (this.health === 0) {
       this.isSunk = true;
+
+      for (const coord in this.positionInMap) {
+       combatant.map.grid1[coord] = Ship.sunkShip;
+      }      
     }
+
+    
   }
 }
 
@@ -266,7 +273,7 @@ class Fleet {
         combatant.fleet[ship].positionInMap[coordinate] = Map.hitMarker;
         combatant.fleet[ship].health -= 1;
       }
-      combatant.fleet[ship].sinkShip();
+      combatant.fleet[ship].sinkShip(combatant);
     });
 
 
@@ -457,7 +464,7 @@ class Human extends Player {
     Fleet.allShipNames.forEach(ship => {
       if (this.lastCoordinateFiredOn in combatant.fleet[ship].positionInMap && 
         combatant.fleet[ship].isSunk) {
-          console.log(`Good job we sunk their ${combatant.fleet[ship].shipName}`);
+          console.log(`\nGood job we sunk their ${combatant.fleet[ship].shipName}`);
         }
     });
 
