@@ -45,11 +45,11 @@ class Ship {
       this.isSunk = true;
 
       for (const coord in this.positionInMap) {
-       combatant.map.grid1[coord] = Ship.sunkShip;
-      }      
+        combatant.map.grid1[coord] = Ship.sunkShip;
+      }
     }
 
-    
+
   }
 }
 
@@ -275,8 +275,6 @@ class Fleet {
       }
       combatant.fleet[ship].sinkShip(combatant);
     });
-
-
   }
 }
 
@@ -408,9 +406,110 @@ class ComputerFleet extends Fleet {
   }
 }
 
+class ShipTracker extends ComputerFleet {
+  constructor() {
+    super();
+    this.orientationKnown = false;
+    this.isHorizontal = null;
+    this.isVertical = null;
+    this.missedCoordinates = [];
+    this.hitCoordinates = [];
+    this.usedOptions = [];
+    this.options = [];
+  }
+
+  // getRandomOption() {
+  //   let min = 0;
+  //   let max = this.options.length - 1;
+
+  //   let option = this.options[this.getRandomNumber(min, max)];
+
+  //   let index = this.options.indexOf(option);
+  //   this.options.splice(index, 1);
+  //   console.log(this.options);
+
+  //   return option;    
+  // }
+
+  // determinOrientation() {
+  //   console.log("Hits:");
+  //   console.log(this.hitCoordinates);
+
+  // }
+
+  setOptions(previousCoordinate, map) { // This aint working right
+    this.options = [];
+    let horizontalOptions = [this.getRight(previousCoordinate, map), this.getLeft(previousCoordinate, map)];
+    let verticalOptions = [this.getAbove(previousCoordinate, map), this.getBelow(previousCoordinate, map)];
+
+    horizontalOptions = horizontalOptions.filter(coordinate => coordinate !== null);
+    verticalOptions = verticalOptions.filter(coordinate => coordinate !== null);
+
+    this.options = this.options.concat(horizontalOptions, verticalOptions);
+    this.options.filter(coord => !this.usedOptions.includes(coord));
+  }
+
+  getAbove(coordinate, map) {
+    let coordNumber = Number(coordinate[1]) - 1;
+
+    if (coordinate.length === 3) {
+      coordNumber = "9";
+      let newCoordinate = coordinate[0] + coordNumber;
+      return this.grid2_hasEmptyCell(newCoordinate, map) ? newCoordinate : null;
+    }
+
+    if (coordNumber > 0 && coordNumber <= 10) {
+      let newCoordinate = coordinate[0] + String(coordNumber);      
+      return this.grid2_hasEmptyCell(newCoordinate, map) ? newCoordinate : null;
+    }
+  }
+
+  getRight(coordinate, map) {
+    let nextLetter = String.fromCharCode(coordinate.charCodeAt(0) + 1);
+    let coordNumber = coordinate[1];
+    if (coordinate.length === 3) {
+      coordNumber = "10";
+    }
+
+    if (nextLetter > "J") {
+      return null;
+    } else {
+      let newCoordinate = nextLetter + coordNumber;
+      return this.grid2_hasEmptyCell(newCoordinate, map) ? newCoordinate : null;
+    }
+  }
+
+  getBelow(coordinate, map) {
+    let coordNumber = Number(coordinate[1]) + 1;
+
+    if (coordinate.length === 3) {
+      return null;
+    }
+
+    let newCoordinate = coordinate[0] + String(coordNumber);
+    return this.grid2_hasEmptyCell(newCoordinate, map) ? newCoordinate : null;
+  }
+
+  getLeft(coordinate,map) {
+    let nextLetter = String.fromCharCode(coordinate.charCodeAt(0) - 1);
+    let coordNumber = coordinate[1];
+    if (coordinate.length === 3) {
+      coordNumber = "10";
+    }
+
+    if (nextLetter < "A") {
+      return null;
+    } else {
+      let newCoordinate = nextLetter + coordNumber;
+      return this.grid2_hasEmptyCell(newCoordinate, map) ? newCoordinate : null;
+    }
+  }
+}
+
 class Player {
   constructor() {
     this.lastCoordinateFiredOn = null;
+    this.isWinner = false;
   }
 
   fireUpon(combatant) {
@@ -462,10 +561,10 @@ class Human extends Player {
     }
 
     Fleet.allShipNames.forEach(ship => {
-      if (this.lastCoordinateFiredOn in combatant.fleet[ship].positionInMap && 
+      if (this.lastCoordinateFiredOn in combatant.fleet[ship].positionInMap &&
         combatant.fleet[ship].isSunk) {
-          console.log(`\nGood job we sunk their ${combatant.fleet[ship].shipName}`);
-        }
+        console.log(`\nGood job we sunk their ${combatant.fleet[ship].shipName}`);
+      }
     });
 
     readline.question("Press Enter to continue");
@@ -477,6 +576,7 @@ class Computer extends Player {
     super();
     this.map = new Map("computer");
     this.fleet = new ComputerFleet();
+    this.shipTracker = new ShipTracker();
   }
 
   setFleepPosition() {
@@ -491,14 +591,63 @@ class Computer extends Player {
   }
 
   fireUpon(combatant) {
-    let randomCoordinate = this.fleet.getRandomCoordinateFrom(combatant.map);
-    let coordinateValue = combatant.map.grid1[randomCoordinate];
 
-    combatant.map.updateMap(randomCoordinate, coordinateValue);
+    console.log(`lastCoordFiredOn: ${this.lastCoordinateFiredOn}`); // delete
+    // console.log(`PreviousHit: ${this.isPreviousCoordinateHit(combatant)}`); // delete
 
-    combatant.fleet.updateFleet(combatant, randomCoordinate);
+    if (this.isPreviousCoordinateHit(combatant)) {
+      console.log("IN HIT CONDITION!\n"); // delete
+      this.shipTracker.setOptions(this.lastCoordinateFiredOn, this.map);
+
+      // if (!this.shipTracker.orientationKnown) {
+      //   let coordinate = this.shipTracker.getRandomOption();
+      //   this.shipTracker.usedOptions.push(coordinate);
+      //   let coordinateValue = combatant.map.grid1[coordinate];
+        
+      //   if (this.map.isHit(coordinateValue)) {
+      //     this.shipTracker.hitCoordinates.push(coordinate);
+      //     this.shipTracker.determinOrientation();
+      //     this.lastCoordinateFiredOn = coordinate;
+      //   }
+
+
+        combatant.map.updateMap(coordinate, coordinateValue);
+
+        combatant.fleet.updateFleet(combatant, coordinate);
+      }
+
+
+    } else {
+      let randomCoordinate = this.fleet.getRandomCoordinateFrom(combatant.map);
+      this.lastCoordinateFiredOn = randomCoordinate;
+
+      let coordinateValue = combatant.map.grid1[randomCoordinate];
+
+      combatant.map.updateMap(randomCoordinate, coordinateValue);
+
+      combatant.fleet.updateFleet(combatant, randomCoordinate);
+    }
+
+    readline.question("End fireupon func for computer") // delete
   }
+
+  isPreviousCoordinateHit(combatant) {
+    let isPreviousHit = false;
+    Fleet.allShipNames.forEach(ship => {
+      if (this.lastCoordinateFiredOn in combatant.fleet[ship].positionInMap) {
+        isPreviousHit = true;
+      }
+    });
+    return isPreviousHit;
+  }
+
+
+
+
+
+
 }
+
 
 class Map {
   static hitMarker = " X ";
@@ -662,16 +811,21 @@ class BattleShipGame {
     this.human.map.displayMapInCombat(this.human.fleet);
 
 
-    console.clear();
+    this.determinWinner();
+  }
 
-
+  determinWinner() {
+    if (this.human.fleet.isFleetDestroyed()) {
+      console.log("\nAdmiral our fleet has been whiped out. We lost");
+    } else if (this.computer.fleet.isFleetDestroyed()) {
+      console.log("\nCongratulations Admiral, that was a well fought battle. The enemy fleet has been destroyed.");
+    }
   }
 }
 
+console.clear();
 let battleship = new BattleShipGame();
 battleship.play();
-
-
 
 
 
