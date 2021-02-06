@@ -599,16 +599,16 @@ class Computer extends Player {
       console.log("IN HIT CONDITION!\n"); // delete
       this.shipTracker.setOptions(this.lastCoordinateFiredOn, this.map);
 
-      // if (!this.shipTracker.orientationKnown) {
-      //   let coordinate = this.shipTracker.getRandomOption();
-      //   this.shipTracker.usedOptions.push(coordinate);
-      //   let coordinateValue = combatant.map.grid1[coordinate];
+      if (!this.shipTracker.orientationKnown) {
+        let coordinate = this.shipTracker.getRandomOption();
+        this.shipTracker.usedOptions.push(coordinate);
+        let coordinateValue = combatant.map.grid1[coordinate];
         
-      //   if (this.map.isHit(coordinateValue)) {
-      //     this.shipTracker.hitCoordinates.push(coordinate);
-      //     this.shipTracker.determinOrientation();
-      //     this.lastCoordinateFiredOn = coordinate;
-      //   }
+        if (this.map.isHit(coordinateValue)) {
+          this.shipTracker.hitCoordinates.push(coordinate);
+          this.shipTracker.determinOrientation();
+          this.lastCoordinateFiredOn = coordinate;
+        }
 
 
         combatant.map.updateMap(coordinate, coordinateValue);
