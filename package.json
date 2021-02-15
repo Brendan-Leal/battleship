@@ -1,0 +1,23 @@
+{
+  "name": "battleship",
+  "version": "1.0.0",
+  "description": "The classic game of battleship that can be played in your terminal",
+  "main": "main.js",
+  "directories": {
+    "lib": "lib",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Brendan-Leal/battleship.git"
+  },
+  "author": "Brendan-Leal",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Brendan-Leal/battleship/issues"
+  },
+  "homepage": "https://github.com/Brendan-Leal/battleship#readme"
+}
