@@ -1,13 +1,4 @@
-// const { BattleShipGame, Computer, Human, readline } = require("../game-modules/main");
-const ShipTracker = require("../game-modules/ship-tracker-class");
-const Map = require("../game-modules/map-class");
-const Player = require("../game-modules/player-class");
 const Computer = require("../game-modules/computer-class");
-const Fleet = require("../game-modules/fleet-class");
-const ComputerFleet = require("../game-modules/computer-fleet-class");
-const Ship = require("../game-modules/ship-class");
-const Human = require("../game-modules/human-class");
-const readline = require("readline-sync");
 
 describe("Ship Tracker Test Suite", () => {
   let computer;
@@ -15,8 +6,6 @@ describe("Ship Tracker Test Suite", () => {
 
   beforeEach(() => {
     computer = new Computer();
-    human = new Human();
-
   });
 
   test("isInRow1() returns true if a given coordinate is in the first row, false otherwise", () => {
@@ -47,9 +36,7 @@ describe("Ship Tracker Test Suite", () => {
 
     computer.shipTracker.coordinatesHit = ["G5", "G6", "G4", "G5"];
     expect(computer.shipTracker.findLowestCoordinate()).toBe("G6");
-  });
-
-  
+  });  
 
   test("isBelowInitialHit() returns true if the last coordinate fired on is below the initial hit, otherwise false", () => {
     computer.shipTracker.initialHit = "A5";
@@ -167,8 +154,6 @@ describe("Ship Tracker Test Suite", () => {
     expect(newComputer.hasOwnProperty("map")).toBe(true);
     expect(newComputer.hasOwnProperty("shipTracker")).toBe(true);
   });
-
-
 });
 
 
