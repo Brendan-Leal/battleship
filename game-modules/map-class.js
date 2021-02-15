@@ -1,7 +1,7 @@
 class Map {
   static shipComponents = "<>^v#"
   static hitMarker = " X ";
-  static missMarker = " M ";
+  static missMarker = " m ";
   static emptyCell = "   ";
   static columnLetters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
   static topRow = `|   | A | B | C | D | E | F | G | H | I | J |`;
@@ -22,35 +22,39 @@ class Map {
     }
   }
 
-  updateMap(coordinate, coordinateValue) { // Confirmed Working
-    let marker = null;
+  update(coordinate, combatant) {
+    if (combatant.reportsHit(coordinate) && this.mapOwner === "human") {
+      this.grid2[coordinate] = Map.hitMarker;
+      combatant.map.grid1[coordinate] = Map.hitMarker;
 
-    if (this.isHit(coordinateValue)) {
-      marker = Map.hitMarker;
-    } else if (this.isMiss(coordinateValue)) {
-      marker = Map.missMarker;
+    } else if (!combatant.reportsHit(coordinate) && this.mapOwner === "human") {
+      this.grid2[coordinate] = Map.missMarker;
+      combatant.map.grid1[coordinate] = Map.missMarker;
+
+    } else if (combatant.reportsHit(coordinate) && this.mapOwner === "computer") {
+      this.grid2[coordinate] = Map.hitMarker;
+      combatant.map.grid1[coordinate] = Map.hitMarker;
+
+    } else if (!combatant.reportsHit(coordinate) && this.mapOwner === "computer") {
+      this.grid2[coordinate] = Map.missMarker;
+      combatant.map.grid1[coordinate] = Map.missMarker;
     }
-
-    this.grid1[coordinate] = marker;
-    this.grid2[coordinate] = marker;
   }
 
-  isMiss(value) { // Confirmed Working
+  isMiss(value) {
     return value === Map.emptyCell;
   }
 
-  isHit(value) { // Confirmed Working
+  isHit(value) {
     return Map.shipComponents.includes(value.trim()[0]);
   }
 
-  display(concealMap = true, fleet) { // Confirmed Working
+  display(fleet, concealMap = true) {
     let cell = this.grid2;
 
     if (concealMap === false) {
       cell = this.grid1;
     }
-
-    this.displayMapHeading();
 
     console.log(Map.line);
     console.log(Map.topRow);
@@ -95,43 +99,39 @@ class Map {
     console.log(`|10 |${cell.A10}|${cell.B10}|${cell.C10}|${cell.D10}|${cell.E10}|${cell.F10}|${cell.G10}|${cell.H10}|${cell.I10}|${cell.J10}|`);
 
     console.log(Map.line);
+  }
+
+  displayMapFooting(fleet) {
+    console.log(`Your Ships: ${fleet.getAliveShips().join(", ")}`);
+  }
+
+  displayMapHeading() {
+    console.log();
+    console.log("Your Fleet Map".padStart(29, " "));
+  }
+
+  displayWarRoomMap(fleet) {
+    let concealMap = false;
+
+    console.clear();
+    console.log("Welcome to the war room Admiral.");
+    console.log(`- This is your fleet map. You have 5 ships of varying sizes to distribute throughout the map.\n- Coordinates are entered letter first followed by the number. Ex: A5\n- Ships can either be placed horizontally or vertically. No diagonal placements.`)
+
+    this.displayMapHeading();
+
+    this.display(fleet, concealMap);
     this.displayMapFooting(fleet);
   }
 
-  displayMapFooting(fleet) { // Confirmed Working
-    if (this.mapOwner === "computer") {
-      console.log(`Enemy Ships: ${fleet.getAliveShips().join(", ")}`);
-    } else if (this.mapOwner === "human") {
-      console.log(`Your Ships: ${fleet.getAliveShips().join(", ")}`);
-    }
-  }
-
-  displayMapHeading() { // Confirmed Working
-    if (this.mapOwner === "human") {
-      console.log("\n");
-      console.log("Your Fleet Map".padStart(29, " "));
-    } else if (this.mapOwner === "computer") {
-      console.log("Enemy Fleet Map".padStart(29, " "));
-    }
-  }
-
-  displayWarRoomMap(fleet) { // Confirmed Working
-    let concealMap = false;
-    console.clear();
-    console.log("Welcome to the war room Admiral.");
-    console.log(`- This is your fleet map. You have 5 ships of varying sizes to distribute throughout the map.\n- Coordinates are entered letter first followed by the number. Ex: A5\n- Ships can either be placed horizontally or vertically. No diagonal placements.`);
-
-    this.display(concealMap, fleet);
-  }
-
-  displayMapInCombat(fleet) { // Confirmed Working
+  displayMapInCombat(fleet) {
     let concealMap = false;
 
-    this.display(concealMap, fleet);
-  }
+    console.log("Enemy Fleet Map".padStart(29, " "));
+    this.display(fleet);
 
-  gridCellAtCoordinateIsEmpty(coordinate, grid) { //Confirmed Working
-    return grid[coordinate] === Map.emptyCell;
+    this.displayMapHeading();
+    this.display(fleet, concealMap);
+    this.displayMapFooting(fleet);
   }
 
   getHitMarker() {
@@ -140,6 +140,18 @@ class Map {
 
   getMissMarker() {
     return Map.missMarker;
+  }
+
+  isCellMarkedMiss(coordinate) {
+    return this.grid2[coordinate] === Map.missMarker;
+  }
+
+  grid2_CoordinateIsEmpty(coordinate) {
+    return this.grid2[coordinate] === Map.emptyCell;
+  }
+
+  grid1_CoordinateIsEmpty(coordinate) {
+    return this.grid1[coordinate] === Map.emptyCell;
   }
 }
 

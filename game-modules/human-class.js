@@ -10,7 +10,7 @@ class Human extends Player {
     this.fleet = new Fleet();
   }
 
-  setPositionOfFleet() { //Confirmed Working
+  setPositionOfFleet() {
     this.fleet.forEach(ship => {
       this.map.displayWarRoomMap(this.fleet);
 
@@ -22,49 +22,64 @@ class Human extends Player {
     });
   }
 
-  fireUpon(combatant) { // Confirmed Working
-    // Humans fire on the computer, so computer object is the combatant
+  fireUpon(computer) {
+    // Humans fire on the computer
     let coordinate = readline.question("\nAdmiral! Choose a coordinate to fire upon: ").toUpperCase();
 
-    while (!combatant.map.gridCellAtCoordinateIsEmpty(coordinate, combatant.map.grid2) ||
-      !combatant.fleet.isValidInput(coordinate, combatant.map)) {
-      console.clear();
+    while (!this.map.grid2_CoordinateIsEmpty(coordinate) || !this.fleet.isValidInput(coordinate, this.map)) {
 
-      combatant.map.display(false, combatant.fleet) // Need to conceal map when playing a real game!
-      this.map.displayMapInCombat(combatant.fleet);
+      if (!this.fleet.isValidInput(coordinate, this.map)) {
+        console.clear();
+        this.map.displayMapInCombat(this.fleet);
 
-      if (!combatant.fleet.isValidInput(coordinate, combatant.map)) {
-        console.log("\nAdmiral! That's not a valid coordinat.");
+        console.log("\nAdmiral! That's not a valid coordinate.");
       } else {
+        console.clear();
+        this.map.displayMapInCombat(this.fleet);
+
         console.log(`\nAdmiral, we already fired on ${coordinate}!`);
       }
 
       coordinate = readline.question(`Please choose a different coodinate: `).toUpperCase();
     }
 
-    let coordinateValue = combatant.map.grid1[coordinate];
+    this.map.update(coordinate, computer);
 
-    combatant.map.updateMap(coordinate, coordinateValue);
+    computer.fleet.updateFleet(computer);
 
-    combatant.fleet.updateFleet(combatant, coordinate);
+    // computer.fleet.updateFleet(this, coordinate); // (this) is the human object
 
     this.lastCoordinateFiredOn = coordinate;
   }
 
-  displayResult(combatant) { // Confirmed Working
-    if (combatant.map.grid1[this.lastCoordinateFiredOn] === this.map.getHitMarker()) {
+  displayResult(computer) {
+    if (computer.map.grid1[this.lastCoordinateFiredOn] === this.map.getHitMarker()) {
       console.log(`\n${this.lastCoordinateFiredOn} is a HIT!`);
-    } else if (combatant.map.grid1[this.lastCoordinateFiredOn] === this.map.getMissMarker()) {
+    } else if (computer.map.grid1[this.lastCoordinateFiredOn] === this.map.getMissMarker()) {
       console.log(`\n${this.lastCoordinateFiredOn} Missed`);
     }
 
-    combatant.fleet.forEach(ship => {
+    computer.fleet.forEach(ship => {
       if (this.lastCoordinateFiredOn in ship.positionInMap && ship.isSunk) {
         console.log(`\nGood job we sunk their ${ship.shipName}`);
       }
     });
 
     readline.question("Press Enter to continue");
+  }
+
+  reportsHit(coordinate) {
+    let coordinateValue = this.map.grid1[coordinate];
+    return this.map.isHit(coordinateValue);
+  }
+
+  reportsSunk(coordinate) {
+   this.fleet.forEach(ship => {
+    let shipPossition = Object.keys(ship.positionInMap);
+    console.log(shipPossition);
+
+    console.log(shipPossition.includes(coordinate));
+   });
   }
 }
 

@@ -31,31 +31,38 @@ class BattleShipGame {
   }
 
   play() {
-    console.clear;
+    console.clear();
     let concealMap = true;
     // INTRO_ASCII.display(); 
     this.human.setPositionOfFleet();
     this.computer.setPositionOfFleet();
 
     while (!this.human.fleet.isFleetDestroyed() && !this.computer.fleet.isFleetDestroyed()) {
+      console.clear();
 
-      this.computer.map.display(false, this.computer.fleet); // change to concealMap when playing a real game
+      // This is for development only delete when done
+      console.log("v===========================================================v");
+      this.computer.map.display(this.computer.fleet);
+      this.computer.map.display(this.computer.fleet, false);
+      console.log("^===========================================================^");
+      // ^This is for development only delete when done^
+
       this.human.map.displayMapInCombat(this.human.fleet);
 
-      this.human.fireUpon(this.computer);
-      // this.computer.fireUpon(this.human);
+      // this.human.fireUpon(this.computer);
+      this.computer.fireUpon(this.human);
 
       this.human.displayResult(this.computer);
 
-      console.clear();
+      // console.clear();
     }
     console.clear();
 
-    this.computer.map.display(false, this.computer.fleet);
-    this.human.map.displayMapInCombat(this.human.fleet);
+
+    // display end game
 
 
-    this.determinWinner();
+    // this.determinWinner();
   }
 
   determinWinner() {
@@ -67,6 +74,13 @@ class BattleShipGame {
   }
 }
 
-console.clear();
+
 let battleship = new BattleShipGame();
 battleship.play();
+
+// module.exports = {
+//   readline,
+//   Human,
+//   Computer,
+//   BattleShipGame,
+// }

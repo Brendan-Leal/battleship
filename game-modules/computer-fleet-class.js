@@ -1,11 +1,12 @@
 const Fleet = require("./fleet-class");
+const readline = require("readline-sync"); // delete
 
 class ComputerFleet extends Fleet {
   constructor() {
     super();
   }
 
-  setRandomShipCoordinates(map, ship) { //Confirmed Working
+  setRandomShipCoordinates(map, ship) {
     do {
       ship.bow = this.getRandomBowCoordinate(map);
       ship.aft = this.getRandomAftCoordinate(map, ship);
@@ -15,22 +16,22 @@ class ComputerFleet extends Fleet {
     } while (this.isIntersectingShips(map, ship) || this.desiredLengthNotMet(ship) || this.isDiagonal(ship));
   }
 
-  getRandomBowCoordinate(map) { //Confirmed Working
+  getRandomBowCoordinate(map) {
     let min = 0;
     let max = Object.keys(map.grid1).length + 1;
     let randomCoordinate = Object.keys(map.grid1)[this.getRandomNumber(min, max)];
 
-    while (!map.gridCellAtCoordinateIsEmpty(randomCoordinate, map.grid1)) {
+    while (!map.grid1_CoordinateIsEmpty(randomCoordinate)) {
       randomCoordinate = Object.keys(map.grid1)[this.getRandomNumber(min, max)];
     }
     return randomCoordinate;
   }
 
-  getRandomAftCoordinate(map, ship) { //Confirmed Working
+  getRandomAftCoordinate(map, ship) { 
     let possableOptions = this.findPossibleOptions(map, ship);
 
     possableOptions = possableOptions.filter(coordinate => {
-      return map.gridCellAtCoordinateIsEmpty(coordinate, map.grid1);
+      return map.grid1_CoordinateIsEmpty(coordinate);
     });
 
     let min = 0;
@@ -40,7 +41,7 @@ class ComputerFleet extends Fleet {
     return possableOptions[randomIndex];
   }
 
-  findPossibleOptions(map, ship) { //Confirmed Working
+  findPossibleOptions(map, ship) {
     let options = [];
     const LEFT = "L";
     const RIGHT = "R";
@@ -55,7 +56,7 @@ class ComputerFleet extends Fleet {
     return options;
   }
 
-  countVerticalSpaces(direction, ship) { //Confirmed Working
+  countVerticalSpaces(direction, ship) {
     let start = Number(ship.bow[1]);
     if (ship.bow.length === 3) {
       start = 10;
@@ -81,7 +82,7 @@ class ComputerFleet extends Fleet {
     }
   }
 
-  countHorizontalSpaces(direction, ship) { //Confirmed Working
+  countHorizontalSpaces(direction, ship) {
     let start = ship.bow.charCodeAt(0);
     let end = null;
 
@@ -117,14 +118,26 @@ class ComputerFleet extends Fleet {
 
   getRandomCoordinateFrom(map) {
     let min = 0;
-    let max = Object.keys(map.grid2).length + 1;
-    let randomCoordinate = Object.keys(map.grid2)[this.getRandomNumber(min, max)];
+    let max = Object.keys(map.grid2).length;
+    let randomIndex = this.getRandomNumber(min, max);
+    let randomCoordinate = Object.keys(map.grid2)[randomIndex];
 
-    while (!this.grid2_hasEmptyCell(randomCoordinate, map)) {
-      randomCoordinate = Object.keys(map.grid2)[this.getRandomNumber(min, max)];
+    while (!map.grid2_CoordinateIsEmpty(randomCoordinate)) {
+      randomIndex = this.getRandomNumber(min, max);
+      randomCoordinate = Object.keys(map.grid2)[randomIndex];
     }
 
     return randomCoordinate;
+  }
+
+  updateFleet(combatant) {
+    // combatant is the computer object
+    // the value of this is the computer FLEET
+
+
+
+    
+    readline.question("Hold") // delete
   }
 }
 
