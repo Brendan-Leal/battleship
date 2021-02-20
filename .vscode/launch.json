@@ -11,7 +11,7 @@
       "skipFiles": [
         "<node_internals>/**"
       ],
-      "program": "${workspaceFolder}/game-modules/main.js",
+      "program": "${workspaceFolder}/lib/main.js",
       "console": "integratedTerminal"
     }
   ]
